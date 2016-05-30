@@ -25,14 +25,21 @@
     <div id="title">安装 Python</div>
     <div id="content">
         <div class="toc"><span class="toctitle">Table of Contents</span><ul>
-<li><a href="#_1">使用系统自带</a><ul>
+<li><a href="#os-x">OS X 使用系统自带</a><ul>
 <li><a href="#python">查看 Python 版本</a></li>
 <li><a href="#pip">安装 pip</a></li>
 </ul>
 </li>
+<li><a href="#centos-python27">Centos 升级Python2.7</a><ul>
+<li><a href="#path">设置 path</a></li>
+<li><a href="#_1">建立软连接</a></li>
+<li><a href="#pip_1">安装 pip</a></li>
+<li><a href="#setuptools">安装 setuptools</a></li>
+</ul>
+</li>
 </ul>
 </div>
-<h2 id="_1">使用系统自带</h2>
+<h2 id="os-x">OS X 使用系统自带</h2>
 <h3 id="python">查看 Python 版本</h3>
 <div class="hlcode"><pre><span class="n">python</span> <span class="o">--</span><span class="n">version</span>
 </pre></div>
@@ -41,6 +48,46 @@
 <h3 id="pip">安装 <code>pip</code></h3>
 <p>默认没有安装 <code>pip</code>，安装方法如下：</p>
 <div class="hlcode"><pre><span class="n">sudo</span> <span class="n">easy_install</span> <span class="n">pip</span>
+</pre></div>
+
+
+<h2 id="centos-python27">Centos 升级Python2.7</h2>
+<p>Centos 中自带了 Python2.6 下面是升级2.7 的方法</p>
+<div class="hlcode"><pre>wget https://www.python.org/ftp/python/2.7.11/Python-2.7.11.tar.xz
+xz -d Python-2.7.11.tar.xz
+tar -xvf Python-2.7.11.tar
+
+<span class="nb">cd </span>Python-2.7.11
+./configure --prefix<span class="o">=</span>/usr/local
+make
+make install
+
+<span class="c"># 查看安装版本</span>
+<span class="o">[</span>root@xxx ~<span class="o">]</span><span class="c"># python2.7 -V</span>
+Python 2.7.11
+</pre></div>
+
+
+<h3 id="path">设置 path</h3>
+<p>先把之前的 2.6 备份</p>
+<div class="hlcode"><pre><span class="n">mv</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">python</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">python2</span><span class="mf">.6</span>
+</pre></div>
+
+
+<h3 id="_1">建立软连接</h3>
+<div class="hlcode"><pre><span class="n">ln</span> <span class="o">-</span><span class="n">s</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">python2</span><span class="mf">.7</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span><span class="n">python</span>
+</pre></div>
+
+
+<h3 id="pip_1">安装 pip</h3>
+<div class="hlcode"><pre><span class="n">wget</span> <span class="n">https</span><span class="o">:</span><span class="c1">//bootstrap.pypa.io/get-pip.py</span>
+<span class="n">python</span> <span class="n">get</span><span class="o">-</span><span class="n">pip</span><span class="p">.</span><span class="n">py</span>
+</pre></div>
+
+
+<h3 id="setuptools">安装 setuptools</h3>
+<div class="hlcode"><pre><span class="n">wget</span> <span class="n">https</span><span class="o">:</span><span class="c1">//bootstrap.pypa.io/ez_setup.py</span>
+<span class="n">python</span> <span class="n">ez_setup</span><span class="p">.</span><span class="n">py</span>
 </pre></div>
     </div>
 
