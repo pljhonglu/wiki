@@ -1,0 +1,61 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel="Stylesheet" type="text/css" href="/static/css/style.css">
+        <link rel="Stylesheet" type="text/css" href="/static/css/tango.css">
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+        <link rel="icon" href="/favicon.ico" type="image/x-icon">
+        <title>Gesture Recognizer - 独奏's Wiki</title>
+        <meta name="keywords" content="Wiki, 独奏, 鸿禄"/>
+        <meta name="description" content="独奏的个人 Wiki，独奏的 Blog 地址：http://homglu.me。"/>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body>
+        <div id="container">
+            
+    <div id="header">
+        <div id="post-nav">
+            
+            <a href="/">Home</a> » <a href="/#iOS">iOS</a> » Gesture Recognizer
+            
+        </div>
+    </div>
+    <div class="clearfix"></div>
+    <div id="title">Gesture Recognizer</div>
+    <div id="content">
+        <div class="toc"><span class="toctitle">Table of Contents</span><ul>
+<li><a href="#_1">手势冲突</a></li>
+</ul>
+</div>
+<h1 id="_1">手势冲突</h1>
+<p>常会遇到手势冲突的问题，可以通过下面几个办法来解决手势冲突问题</p>
+<div class="hlcode"><pre><span class="c1">// otherGestureRecognizer 执行失败， gestureRecognizer 才会执行</span>
+<span class="o">-</span> <span class="p">(</span><span class="no">BOOL</span><span class="p">)</span><span class="nl">gestureRecognizer:</span><span class="p">(</span><span class="n">UIGestureRecognizer</span> <span class="o">*</span><span class="p">)</span><span class="n">gestureRecognizer</span> <span class="nl">shouldRequireFailureOfGestureRecognizer:</span><span class="p">(</span><span class="n">UIGestureRecognizer</span> <span class="o">*</span><span class="p">)</span><span class="n">otherGestureRecognizer</span><span class="p">{</span>
+    <span class="k">return</span> <span class="no">NO</span><span class="p">;</span>
+<span class="p">}</span>
+
+<span class="c1">//gestureRecognizer 失败了 otherGestureRecognizer 才会执行</span>
+<span class="o">-</span> <span class="p">(</span><span class="no">BOOL</span><span class="p">)</span><span class="nl">gestureRecognizer:</span><span class="p">(</span><span class="n">UIGestureRecognizer</span> <span class="o">*</span><span class="p">)</span><span class="n">gestureRecognizer</span> <span class="nl">shouldBeRequiredToFailByGestureRecognizer:</span><span class="p">(</span><span class="n">UIGestureRecognizer</span> <span class="o">*</span><span class="p">)</span><span class="n">otherGestureRecognizer</span><span class="p">{</span>
+    <span class="k">return</span> <span class="no">YES</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<div class="hlcode"><pre><span class="k">-</span> <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="nf">requireGestureRecognizerToFail:</span><span class="p">(</span><span class="n">UIGestureRecognizer</span> <span class="o">*</span><span class="p">)</span><span class="nv">otherGestureRecognizer</span><span class="p">;</span>
+
+<span class="c1">// [A requireGestureRecognizerToFail:B];</span>
+<span class="c1">// B 手势失败了才会执行 A 手势，跟第一个代理类似</span>
+</pre></div>
+    </div>
+
+        </div>
+        <div id="footer">
+            <span>
+                Copyright © 2016 独奏.
+                Powered by <a href="http://simiki.org/" target="_blank">Simiki</a>.
+            </span>
+        </div>
+        
+    </body>
+</html>

@@ -1,0 +1,93 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel="Stylesheet" type="text/css" href="/static/css/style.css">
+        <link rel="Stylesheet" type="text/css" href="/static/css/tango.css">
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+        <link rel="icon" href="/favicon.ico" type="image/x-icon">
+        <title>部署shadowsocks - 独奏's Wiki</title>
+        <meta name="keywords" content="Wiki, 独奏, 鸿禄"/>
+        <meta name="description" content="独奏的个人 Wiki，独奏的 Blog 地址：http://homglu.me。"/>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body>
+        <div id="container">
+            
+    <div id="header">
+        <div id="post-nav">
+            
+            <a href="/">Home</a> » <a href="/#Linux">Linux</a> » 部署shadowsocks
+            
+        </div>
+    </div>
+    <div class="clearfix"></div>
+    <div id="title">部署shadowsocks</div>
+    <div id="content">
+        <div class="toc"><span class="toctitle">Table of Contents</span><ul>
+<li><a href="#cow">方法一 : cow</a></li>
+<li><a href="#shadowsocks-local">方法二 : shadowsocks-local</a></li>
+</ul>
+</div>
+<h2 id="cow">方法一 : cow</h2>
+<p>国外服务器配置 shadowsocks，国内服务器通过 cow 链接国外服务器的 shadowsocks，然后国内服务器通过 cow 提供 pac 文件，pac 文件跟客户端使用</p>
+<p><a href="https://github.com/cyfdecyf/cow">cow</a></p>
+<p>地址：http://xxx.xxx.xxx.xxx:xxxx/pac</p>
+<p>描述文件: http://xxx.com/iPhoneProxy.mobileconfig</p>
+<h2 id="shadowsocks-local">方法二 : shadowsocks-local</h2>
+<p>先安装 ss-local</p>
+<p>安装依赖</p>
+<div class="hlcode"><pre><span class="n">yum</span> <span class="n">install</span> <span class="n">autoconf</span> <span class="n">libtool</span> <span class="n">openssl</span><span class="o">-</span><span class="n">devel</span> <span class="n">gcc</span> <span class="n">swig</span> <span class="n">python</span><span class="o">-</span><span class="n">devel</span>
+</pre></div>
+
+
+<p>安装shadowsocks-libev</p>
+<div class="hlcode"><pre><span class="n">cd</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="n">src</span>
+
+<span class="n">git</span> <span class="n">clone</span> <span class="n">https</span><span class="o">:</span><span class="c1">//github.com/shadowsocks/shadowsocks-libev.git #使用git下载</span>
+
+<span class="n">cd</span> <span class="n">shadowsocks</span><span class="o">-</span><span class="n">libev</span> <span class="err">#进入安装目录</span>
+
+<span class="p">.</span><span class="o">/</span><span class="n">configure</span> <span class="err">#配置</span>
+
+<span class="n">make</span> <span class="err">#编译</span>
+
+<span class="n">make</span> <span class="n">install</span> <span class="err">#安装</span>
+
+<span class="n">cd</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="n">bin</span><span class="o">/</span> <span class="err">#安装好之后，会在此目录生成以下文件</span><span class="n">ss</span><span class="o">-</span><span class="n">server</span><span class="err">、</span><span class="n">ss</span><span class="o">-</span><span class="n">local</span><span class="err">、</span><span class="n">ss</span><span class="o">-</span><span class="n">redir</span>
+</pre></div>
+
+
+<p>配置 local</p>
+<div class="hlcode"><pre><span class="n">vi</span> <span class="o">~/</span><span class="n">ss</span><span class="o">-</span><span class="n">config</span><span class="p">.</span><span class="n">json</span> <span class="err">#编辑，添加以下内容</span>
+
+<span class="p">{</span>
+<span class="s">&quot;server&quot;</span><span class="o">:</span><span class="s">&quot;192.168.1.161&quot;</span><span class="p">,</span> <span class="err">#服务端监听的</span><span class="n">IP</span><span class="err">地址</span>
+<span class="s">&quot;server_port&quot;</span><span class="o">:</span><span class="mi">8388</span><span class="p">,</span> <span class="err">#服务端端口</span>
+<span class="s">&quot;local_address&quot;</span><span class="o">:</span><span class="s">&quot;127.0.0.1&quot;</span><span class="p">,</span> <span class="err">#本地监听的</span><span class="n">IP</span><span class="err">地址</span>
+<span class="s">&quot;local_port&quot;</span><span class="o">:</span><span class="mi">1080</span><span class="p">,</span> <span class="err">#本地端端口</span>
+<span class="s">&quot;password&quot;</span><span class="o">:</span><span class="s">&quot;xxxxxx&quot;</span><span class="p">,</span> <span class="err">#用来加密的密码</span>
+<span class="s">&quot;timeout&quot;</span><span class="o">:</span><span class="mi">60</span><span class="p">,</span> <span class="err">#超时时间（秒）</span>
+<span class="s">&quot;method&quot;</span><span class="o">:</span><span class="s">&quot;aes-256-cfb&quot;</span><span class="p">,</span> <span class="err">#加密方法，推荐用</span> <span class="err">“</span><span class="n">aes</span><span class="o">-</span><span class="mi">256</span><span class="o">-</span><span class="n">cfb</span><span class="err">”</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<p>运行shadowsocks-libev服务端</p>
+<p>/usr/local/bin/ss-server -u -c /etc/shadowsocks-libev/config.json</p>
+<p>参考</p>
+<ul>
+<li><a href="http://www.osyunwei.com/archives/9068.html">Linux下配置Shadowsocks代理服务器浏览国外网站</a></li>
+</ul>
+    </div>
+
+        </div>
+        <div id="footer">
+            <span>
+                Copyright © 2016 独奏.
+                Powered by <a href="http://simiki.org/" target="_blank">Simiki</a>.
+            </span>
+        </div>
+        
+    </body>
+</html>

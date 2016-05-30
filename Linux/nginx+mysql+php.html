@@ -1,0 +1,90 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel="Stylesheet" type="text/css" href="/static/css/style.css">
+        <link rel="Stylesheet" type="text/css" href="/static/css/tango.css">
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+        <link rel="icon" href="/favicon.ico" type="image/x-icon">
+        <title>nginx+mysql+php - 独奏's Wiki</title>
+        <meta name="keywords" content="Wiki, 独奏, 鸿禄"/>
+        <meta name="description" content="独奏的个人 Wiki，独奏的 Blog 地址：http://homglu.me。"/>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body>
+        <div id="container">
+            
+    <div id="header">
+        <div id="post-nav">
+            
+            <a href="/">Home</a> » <a href="/#Linux">Linux</a> » nginx+mysql+php
+            
+        </div>
+    </div>
+    <div class="clearfix"></div>
+    <div id="title">nginx+mysql+php</div>
+    <div id="content">
+        <div class="toc"><span class="toctitle">Table of Contents</span><ul>
+<li><a href="#nginx">安装 nginx</a></li>
+<li><a href="#mysql">mysql</a></li>
+<li><a href="#php">PHP</a></li>
+</ul>
+</div>
+<h2 id="nginx">安装 nginx</h2>
+<ol>
+<li>安装依赖</li>
+</ol>
+<div class="hlcode"><pre><span class="n">yum</span> <span class="o">-</span><span class="n">y</span> <span class="n">install</span> <span class="n">gcc</span> <span class="n">gcc</span><span class="o">-</span><span class="n">c</span><span class="o">++</span> <span class="n">make</span> <span class="n">libtool</span> <span class="n">zlib</span> <span class="n">zlib</span><span class="o">-</span><span class="n">devel</span> <span class="n">openssl</span> <span class="n">openssl</span><span class="o">-</span><span class="n">devel</span> <span class="n">pcre</span> <span class="n">pcre</span><span class="o">-</span><span class="n">devel</span>
+</pre></div>
+
+
+<ol>
+<li>下载解压 nginx</li>
+</ol>
+<div class="hlcode"><pre><span class="n">wget</span> <span class="n">http</span><span class="o">:</span><span class="c1">//downloads.sourceforge.net/project/pcre/pcre/8.35/pcre-8.35.tar.gz</span>
+<span class="n">tar</span> <span class="n">zxvf</span> <span class="n">pcre</span><span class="o">-</span><span class="mf">8.35</span><span class="p">.</span><span class="n">tar</span><span class="p">.</span><span class="n">gz</span>
+</pre></div>
+
+
+<ol>
+<li>编译安装</li>
+</ol>
+<div class="hlcode"><pre><span class="p">.</span><span class="o">/</span><span class="n">configure</span> <span class="o">--</span><span class="n">prefix</span><span class="o">=/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="n">nginx</span> <span class="o">--</span><span class="n">with</span><span class="o">-</span><span class="n">http_stub_status_module</span> <span class="o">--</span><span class="n">with</span><span class="o">-</span><span class="n">http_ssl_module</span> <span class="o">--</span><span class="n">with</span><span class="o">-</span><span class="n">pcre</span> <span class="o">--</span><span class="n">with</span><span class="o">-</span><span class="n">http_gzip_static_module</span> <span class="o">--</span><span class="n">with</span><span class="o">-</span><span class="n">http_realip_module</span>
+
+<span class="n">make</span>
+
+<span class="n">make</span> <span class="n">install</span>
+</pre></div>
+
+
+<ol>
+<li>修改配置</li>
+</ol>
+<p>启动</p>
+<p>/usr/local/nginx/sbin/nginx</p>
+<p>参考
+<a href="http://seanlook.com/2015/05/17/nginx-install-and-config/">nginx服务器安装及配置文件详解</a>
+<a href="http://www.runoob.com/linux/nginx-install-setup.html">Nginx 安装配置</a></p>
+<h2 id="mysql">mysql</h2>
+<div class="hlcode"><pre><span class="n">yum</span> <span class="n">install</span> <span class="n">mysql</span><span class="o">-</span><span class="n">server</span>
+
+<span class="n">systemctl</span> <span class="n">start</span> <span class="n">mysql</span><span class="p">.</span><span class="n">service</span> <span class="err">#</span> <span class="err">启动</span> <span class="n">MySQL</span> <span class="n">server</span>
+</pre></div>
+
+
+<h2 id="php">PHP</h2>
+<div class="hlcode"><pre><span class="n">yum</span> <span class="n">install</span> <span class="n">php</span><span class="o">-</span><span class="n">fpm</span> <span class="n">php</span><span class="o">-</span><span class="n">mysql</span>
+<span class="n">systemctl</span> <span class="n">start</span> <span class="n">php</span><span class="o">-</span><span class="n">fpm</span>
+</pre></div>
+    </div>
+
+        </div>
+        <div id="footer">
+            <span>
+                Copyright © 2016 独奏.
+                Powered by <a href="http://simiki.org/" target="_blank">Simiki</a>.
+            </span>
+        </div>
+        
+    </body>
+</html>

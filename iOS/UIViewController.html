@@ -1,0 +1,53 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel="Stylesheet" type="text/css" href="/static/css/style.css">
+        <link rel="Stylesheet" type="text/css" href="/static/css/tango.css">
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+        <link rel="icon" href="/favicon.ico" type="image/x-icon">
+        <title>UITableView - 独奏's Wiki</title>
+        <meta name="keywords" content="Wiki, 独奏, 鸿禄"/>
+        <meta name="description" content="独奏的个人 Wiki，独奏的 Blog 地址：http://homglu.me。"/>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body>
+        <div id="container">
+            
+    <div id="header">
+        <div id="post-nav">
+            
+            <a href="/">Home</a> » <a href="/#iOS">iOS</a> » UITableView
+            
+        </div>
+    </div>
+    <div class="clearfix"></div>
+    <div id="title">UITableView</div>
+    <div id="content">
+        <div class="toc"><span class="toctitle">Table of Contents</span><ul>
+<li><a href="#uiviewcontroller">UIViewController 布局</a></li>
+</ul>
+</div>
+<h2 id="uiviewcontroller">UIViewController 布局</h2>
+<div class="hlcode"><pre><span class="n">viewWillLayoutSubviews</span>
+<span class="n">updateViewConstraints</span>
+<span class="n">viewDidLayoutSubviews</span>
+</pre></div>
+
+
+<p>由于现在 iOS 硬件也有多种屏幕尺寸了，不免要在代码里做些布局相关的事。这时往往要在 UIViewController 的 view 已是合适大小之后，这时上面几个方法就有用了。</p>
+<p>而且要注意到很重要的一点：在 <code>viewDidLoad</code> 时 UIViewController 的 view 并没有 resize 过，特别是来自 xib 时，此时的尺寸还是 xib 里的尺寸。</p>
+<p>对于VC来说设置布局的最合理时机应该是 <code>viewWillLayoutSubviews</code> 或者<code>viewDidLayoutSubviews</code> (推荐后者)，对于 UIView 来说设置布局的最合理时机是为 <code>layoutSubviews</code>。</p>
+<p>如果选择 <code>viewWillAppear</code> 作为布局时机，很有可能触发一些不必要的布局 (比如 modal VC 被 dismiss 后导致当前的 topViewController 调用到 viewWillAppear 这种)</p>
+    </div>
+
+        </div>
+        <div id="footer">
+            <span>
+                Copyright © 2016 独奏.
+                Powered by <a href="http://simiki.org/" target="_blank">Simiki</a>.
+            </span>
+        </div>
+        
+    </body>
+</html>

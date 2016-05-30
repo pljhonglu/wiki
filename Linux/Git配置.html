@@ -1,0 +1,99 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel="Stylesheet" type="text/css" href="/static/css/style.css">
+        <link rel="Stylesheet" type="text/css" href="/static/css/tango.css">
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+        <link rel="icon" href="/favicon.ico" type="image/x-icon">
+        <title>Git配置 - 独奏's Wiki</title>
+        <meta name="keywords" content="Wiki, 独奏, 鸿禄"/>
+        <meta name="description" content="独奏的个人 Wiki，独奏的 Blog 地址：http://homglu.me。"/>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body>
+        <div id="container">
+            
+    <div id="header">
+        <div id="post-nav">
+            
+            <a href="/">Home</a> » <a href="/#Linux">Linux</a> » Git配置
+            
+        </div>
+    </div>
+    <div class="clearfix"></div>
+    <div id="title">Git配置</div>
+    <div id="content">
+        <div class="toc"><span class="toctitle">Table of Contents</span><ul>
+<li><a href="#ssh-key">生成 ssh key</a></li>
+<li><a href="#github">在 github 上面设置公钥。</a></li>
+<li><a href="#git-config">配置 git config</a></li>
+</ul>
+</div>
+<h2 id="ssh-key">生成 ssh key</h2>
+<div class="hlcode"><pre><span class="nv">$ </span>ssh-keygen -t rsa   
+Generating public/private rsa key pair.
+Enter file in which to save the key <span class="o">(</span>/Users/xxx/.ssh/id_rsa<span class="o">)</span>: github
+Enter passphrase <span class="o">(</span>empty <span class="k">for </span>no passphrase<span class="o">)</span>:
+Enter same passphrase again:
+Your identification has been saved in github.
+Your public key has been saved in github.pub.
+The key fingerprint is:
+SHA256:xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx xxx@xxx.local
+The key<span class="err">&#39;</span>s randomart image is:
++---<span class="o">[</span>RSA 2048<span class="o">]</span>----+
+|o.  o  .         |
+|.oo<span class="o">=</span>o.o .        |
+|.oooo*.+.        |
+|..+o<span class="o">=</span>++oo.       |
+|E +*+oo*S.       |
+|.*<span class="o">=</span> ....<span class="o">=</span>        |
+|++.o     .       |
+|+.+              |
+| <span class="o">=</span>o              |
++----<span class="o">[</span>SHA256<span class="o">]</span>-----+
+</pre></div>
+
+
+<h2 id="github">在 github 上面设置公钥。</h2>
+<h2 id="git-config">配置 git config</h2>
+<p>编辑 <code>.ssh</code> 目录下的 config 文件。添加如下行</p>
+<div class="hlcode"><pre><span class="n">HOST</span> <span class="n">github</span><span class="p">.</span><span class="n">com</span>
+    <span class="n">HostName</span> <span class="n">github</span><span class="p">.</span><span class="n">com</span>
+    <span class="n">IdentityFile</span> <span class="o">~/</span><span class="p">.</span><span class="n">ssh</span><span class="o">/</span><span class="n">github</span>
+</pre></div>
+
+
+<p>然后通过如下命令测试是否可用</p>
+<div class="hlcode"><pre>ssh -T git@github.com
+</pre></div>
+
+
+<p>如果成功会返回如下信息</p>
+<div class="hlcode"><pre>Hi xxx! You<span class="err">&#39;</span>ve successfully authenticated, but GitHub does not provide shell access.
+</pre></div>
+
+
+<p>但是诡异的是我一直返回下面的错误</p>
+<div class="hlcode"><pre>ssh: connect to host github.com port 22: Operation timed out
+</pre></div>
+
+
+<p>Google 之后发现了<a href="https://help.github.com/articles/using-ssh-over-the-https-port/">这里</a>，有可能是防火墙禁用了 ssh 链接的问题导致的。所以按照文章所说，需要修改一下连接的端口号，通过 https 的443端口来进行。修改之后为如下形式</p>
+<div class="hlcode"><pre><span class="n">HOST</span> <span class="n">github</span><span class="p">.</span><span class="n">com</span>
+    <span class="n">HostName</span> <span class="n">ssh</span><span class="p">.</span><span class="n">github</span><span class="p">.</span><span class="n">com</span>
+    <span class="n">Port</span> <span class="mi">443</span>
+    <span class="n">IdentityFile</span> <span class="o">~/</span><span class="p">.</span><span class="n">ssh</span><span class="o">/</span><span class="n">github</span>
+</pre></div>
+    </div>
+
+        </div>
+        <div id="footer">
+            <span>
+                Copyright © 2016 独奏.
+                Powered by <a href="http://simiki.org/" target="_blank">Simiki</a>.
+            </span>
+        </div>
+        
+    </body>
+</html>
