@@ -32,14 +32,14 @@
 </ul>
 </div>
 <h2 id="_1">安装</h2>
-<div class="hlcode"><pre><span class="n">pip</span> <span class="n">install</span> <span class="n">simiki</span> <span class="o">--</span><span class="n">user</span>
+<div class="hlcode"><pre>pip install simiki --user
 </pre></div>
 
 
 <p>安装到 <code>~/Library/Python/2.7/bin</code> 目录下</p>
 <h2 id="_2">添加到环境变量</h2>
 <p>打开 <code>~/.zshrc</code> 添加如下行</p>
-<div class="hlcode"><pre><span class="n">export</span> <span class="n">PATH</span><span class="o">=</span><span class="err">$</span><span class="n">HOME</span><span class="o">/</span><span class="n">Library</span><span class="o">/</span><span class="n">Python</span><span class="o">/</span><span class="mf">2.7</span><span class="o">/</span><span class="n">bin</span><span class="o">:</span><span class="err">$</span><span class="n">PATH</span>
+<div class="hlcode"><pre><span class="nb">export </span><span class="nv">PATH</span><span class="o">=</span><span class="nv">$HOME</span>/Library/Python/2.7/bin:<span class="nv">$PATH</span>
 </pre></div>
 
 
@@ -51,7 +51,7 @@
 
 
 <p>因为系统中缺少 timezone 文件，如下创建</p>
-<div class="hlcode"><pre><span class="n">vi</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">timezone</span>
+<div class="hlcode"><pre>vi /etc/timezone
 </pre></div>
 
 
