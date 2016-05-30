@@ -27,6 +27,7 @@
         <div class="toc"><span class="toctitle">Table of Contents</span><ul>
 <li><a href="#_1">安装</a></li>
 <li><a href="#_2">添加到环境变量</a></li>
+<li><a href="#_3">文章更新操作</a></li>
 </ul>
 </div>
 <h2 id="_1">安装</h2>
@@ -38,6 +39,18 @@
 <h2 id="_2">添加到环境变量</h2>
 <p>打开 <code>~/.zshrc</code> 添加如下行</p>
 <div class="hlcode"><pre><span class="n">export</span> <span class="n">PATH</span><span class="o">=</span><span class="err">$</span><span class="n">HOME</span><span class="o">/</span><span class="n">Library</span><span class="o">/</span><span class="n">Python</span><span class="o">/</span><span class="mf">2.7</span><span class="o">/</span><span class="n">bin</span><span class="o">:</span><span class="err">$</span><span class="n">PATH</span>
+</pre></div>
+
+
+<h2 id="_3">文章更新操作</h2>
+<p>本地更新后 push 到 coding</p>
+<p>服务器执行操作</p>
+<div class="hlcode"><pre><span class="n">git</span> <span class="n">pull</span>
+<span class="n">simiki</span> <span class="n">g</span>
+<span class="n">cd</span> <span class="n">output</span>
+<span class="n">git</span> <span class="n">add</span>
+<span class="n">git</span> <span class="n">commit</span> <span class="o">-</span><span class="n">m</span> <span class="s">&quot;update&quot;</span>
+<span class="n">git</span> <span class="n">push</span>
 </pre></div>
     </div>
 
