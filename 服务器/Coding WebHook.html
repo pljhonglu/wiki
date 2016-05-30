@@ -1,0 +1,102 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel="Stylesheet" type="text/css" href="/static/css/style.css">
+        <link rel="Stylesheet" type="text/css" href="/static/css/tango.css">
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+        <link rel="icon" href="/favicon.ico" type="image/x-icon">
+        <title>Coding WebHook - 独奏's Wiki</title>
+        <meta name="keywords" content="Wiki, 独奏, 鸿禄"/>
+        <meta name="description" content="独奏的个人 Wiki，独奏的 Blog 地址：http://homglu.me。"/>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body>
+        <div id="container">
+            
+    <div id="header">
+        <div id="post-nav">
+            
+            <a href="/">Home</a> » <a href="/#服务器">服务器</a> » Coding WebHook
+            
+        </div>
+    </div>
+    <div class="clearfix"></div>
+    <div id="title">Coding WebHook</div>
+    <div id="content">
+        <div class="toc"><span class="toctitle">Table of Contents</span><ul>
+<li><a href="#hookjs">hook.js</a><ul>
+<li><a href="#wiki_hooksh">wiki_hook.sh</a></li>
+<li><a href="#blog_hooksh">blog_hook.sh</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<h1 id="hookjs">hook.js</h1>
+<div class="hlcode"><pre><span class="err">测试测试测试</span>
+</pre></div>
+
+
+<h2 id="wiki_hooksh">wiki_hook.sh</h2>
+<div class="hlcode"><pre><span class="c">#!/bin/bash</span>
+<span class="nv">HOOKLOGPATH</span><span class="o">=</span><span class="s1">&#39;wiki_hook.log&#39;</span>
+<span class="nv">GITLOGPATH</span><span class="o">=</span><span class="s1">&#39;wiki_git.log&#39;</span>
+<span class="nv">SIMIKILOGPATH</span><span class="o">=</span><span class="s1">&#39;wiki_simiki.log&#39;</span>
+
+<span class="nb">cd </span>Wiki
+<span class="nv">date</span><span class="o">=</span><span class="sb">`</span>date <span class="s2">&quot;+%Y-%m-%d %H:%M:%S&quot;</span><span class="sb">`</span>
+
+<span class="nb">echo</span> <span class="s2">&quot;====================pull start ${date}===================&quot;</span> &gt;&gt; <span class="nv">$HOOKLOGPATH</span>
+git pull &gt; <span class="nv">$GITLOGPATH</span>
+<span class="nb">echo</span> <span class="s2">&quot;git pull finish!&quot;</span> &gt;&gt; <span class="nv">$HOOKLOGPATH</span>
+
+<span class="nb">echo</span> <span class="s2">&quot;${date}&quot;</span> &gt; <span class="nv">$SIMIKILOGPATH</span>
+simiki g &gt;&gt; <span class="nv">$SIMIKILOGPATH</span>
+<span class="nb">echo</span> <span class="s2">&quot;simiki generate finish!&quot;</span> &gt;&gt; <span class="nv">$HOOKLOGPATH</span>
+
+<span class="nb">echo</span> <span class="s2">&quot;to output Directory.&quot;</span> &gt;&gt; <span class="nv">$HOOKLOGPATH</span>
+<span class="nb">cd </span>Wiki/output
+git add --update 
+git commit -m <span class="s2">&quot;Update Documentation&quot;</span>
+git push -u origin gh-pages
+
+<span class="nb">echo</span> <span class="s2">&quot;simiki output file push finished!&quot;</span> &gt;&gt; <span class="nv">$HOOKLOGPATH</span>
+<span class="nb">echo</span> <span class="s2">&quot;==================== done ===================&quot;</span> &gt;&gt; <span class="nv">$HOOKLOGPATH</span>
+<span class="nb">echo</span> <span class="s2">&quot;finish&quot;</span>
+</pre></div>
+
+
+<h2 id="blog_hooksh">blog_hook.sh</h2>
+<div class="hlcode"><pre><span class="c">#!/bin/bash</span>
+<span class="nv">HOOKLOGPATH</span><span class="o">=</span><span class="s1">&#39;blog_hook.log&#39;</span>
+<span class="nv">GITLOGPATH</span><span class="o">=</span><span class="s1">&#39;blog_git.log&#39;</span>
+<span class="nv">HEXOLOGPATH</span><span class="o">=</span><span class="s1">&#39;blog_hexo.log&#39;</span>
+
+<span class="nb">cd </span>blog
+<span class="nv">date</span><span class="o">=</span><span class="sb">`</span>date <span class="s2">&quot;+%Y-%m-%d %H:%M:%S&quot;</span><span class="sb">`</span>
+
+<span class="nb">echo</span> <span class="s2">&quot;====================pull start ${date}===================&quot;</span> &gt;&gt; <span class="nv">$HOOKLOGPATH</span>
+git pull &gt; <span class="nv">$GITLOGPATH</span>
+<span class="nb">echo</span> <span class="s2">&quot;git pull finish!&quot;</span> &gt;&gt; <span class="nv">$HOOKLOGPATH</span>
+<span class="c"># hexo clean &gt; $HEXOLOGPATH</span>
+<span class="c"># echo &quot;hexo clean finish!&quot; &gt;&gt; $HOOKLOGPATH</span>
+<span class="nb">echo</span> <span class="s2">&quot;${date}&quot;</span> &gt; <span class="nv">$HEXOLOGPATH</span>
+hexo g &gt;&gt; <span class="nv">$HEXOLOGPATH</span>
+<span class="nb">echo</span> <span class="s2">&quot;hexo generate finish!&quot;</span> &gt;&gt; <span class="nv">$HOOKLOGPATH</span>
+hexo d &gt;&gt; <span class="nv">$HEXOLOGPATH</span>
+<span class="nb">echo</span> <span class="s2">&quot;hexo deploy finish!&quot;</span> &gt;&gt; <span class="nv">$HOOKLOGPATH</span>
+<span class="nb">echo</span> <span class="s2">&quot;==================== done ===================&quot;</span> &gt;&gt; <span class="nv">$HOOKLOGPATH</span>
+<span class="nb">echo</span> <span class="s2">&quot;finish&quot;</span>
+</pre></div>
+    </div>
+
+        </div>
+        <div id="footer">
+            <span>
+                Copyright © 2016 独奏.
+                Powered by <a href="http://simiki.org/" target="_blank">Simiki</a>.
+            </span>
+        </div>
+        
+    </body>
+</html>
