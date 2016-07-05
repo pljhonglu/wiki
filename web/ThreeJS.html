@@ -1,0 +1,162 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel="Stylesheet" type="text/css" href="/static/css/style.css">
+        <link rel="Stylesheet" type="text/css" href="/static/css/tango.css">
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+        <link rel="icon" href="/favicon.ico" type="image/x-icon">
+        <title>ThreeJS - 独奏's Wiki</title>
+        <meta name="keywords" content="Wiki, 独奏, 鸿禄"/>
+        <meta name="description" content="独奏的个人 Wiki，独奏的 Blog 地址：http://homglu.me。"/>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body>
+        <div id="container">
+            
+    <div id="header">
+        <div id="post-nav">
+            
+            <a href="/">Home</a> » <a href="/#web">web</a> » ThreeJS
+            
+        </div>
+    </div>
+    <div class="clearfix"></div>
+    <div id="title">ThreeJS</div>
+    <div id="content">
+        <div class="toc"><span class="toctitle">Table of Contents</span><ul>
+<li><a href="#_1">简单的全景</a></li>
+<li><a href="#_2">世界坐标转换屏幕坐标系</a></li>
+<li><a href="#_3">事件检测</a></li>
+<li><a href="#json">加载 json 模型</a></li>
+</ul>
+</div>
+<h2 id="_1">简单的全景</h2>
+<div class="hlcode"><pre><span class="nx">LEWPano</span> <span class="o">=</span> <span class="kd">function</span><span class="p">(</span><span class="nx">domElement</span><span class="p">){</span>
+    <span class="c1">// init renderer</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">domElement</span> <span class="o">=</span> <span class="nx">domElement</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">canvasWidth</span> <span class="o">=</span> <span class="nx">domElement</span><span class="p">.</span><span class="nx">clientWidth</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">canvasHeight</span> <span class="o">=</span> <span class="nx">domElement</span><span class="p">.</span><span class="nx">clientHeight</span><span class="p">;</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">renderer</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">THREE</span><span class="p">.</span><span class="nx">WebGLRenderer</span><span class="p">();</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">renderer</span><span class="p">.</span><span class="nx">setPixelRatio</span><span class="p">(</span> <span class="nb">window</span><span class="p">.</span><span class="nx">devicePixelRatio</span> <span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">renderer</span><span class="p">.</span><span class="nx">setSize</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">canvasWidth</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">canvasHeight</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">renderer</span><span class="p">.</span><span class="nx">setClearColor</span><span class="p">(</span> <span class="k">new</span> <span class="nx">THREE</span><span class="p">.</span><span class="nx">Color</span><span class="p">(</span> <span class="mh">0xffffff</span> <span class="p">)</span> <span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">domElement</span><span class="p">.</span><span class="nx">appendChild</span><span class="p">(</span> <span class="k">this</span><span class="p">.</span><span class="nx">renderer</span><span class="p">.</span><span class="nx">domElement</span> <span class="p">);</span>
+
+    <span class="c1">// scene</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">scene</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">THREE</span><span class="p">.</span><span class="nx">Scene</span><span class="p">();</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">scene</span><span class="p">.</span><span class="nx">fog</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">THREE</span><span class="p">.</span><span class="nx">FogExp2</span><span class="p">(</span> <span class="mh">0xffffff</span><span class="p">,</span> <span class="mf">0.0005</span> <span class="p">);</span>
+
+    <span class="c1">// camera</span>
+    <span class="kd">var</span> <span class="nx">sphereRadius</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">;</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">camera</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">THREE</span><span class="p">.</span><span class="nx">PerspectiveCamera</span><span class="p">(</span><span class="mi">60</span><span class="p">,</span> <span class="k">this</span><span class="p">.</span><span class="nx">canvasWidth</span> <span class="o">/</span> <span class="k">this</span><span class="p">.</span><span class="nx">canvasHeight</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="nx">sphereRadius</span><span class="o">*</span><span class="mi">2</span> <span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">camera</span><span class="p">.</span><span class="nx">position</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">scene</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">camera</span><span class="p">);</span>
+
+    <span class="c1">// 球模型</span>
+    <span class="kd">var</span> <span class="nx">mesh</span> <span class="o">=</span> <span class="k">this</span><span class="p">.</span><span class="nx">createSphereScene</span><span class="p">(</span><span class="s2">&quot;./image.png&quot;</span><span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">scene</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">mesh</span><span class="p">);</span>
+
+    <span class="c1">// 漫反射光线</span>
+    <span class="kd">var</span> <span class="nx">light</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">THREE</span><span class="p">.</span><span class="nx">AmbientLight</span><span class="p">(</span> <span class="mh">0x666666</span> <span class="p">);</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">scene</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span> <span class="nx">light</span> <span class="p">);</span>
+
+    <span class="c1">// 开始渲染</span>
+    <span class="k">this</span><span class="p">.</span><span class="nx">render</span><span class="p">();</span>
+<span class="p">}</span>
+
+<span class="nx">LEWPano</span><span class="p">.</span><span class="nx">prototype</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="nx">createSphereScene</span> <span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">image</span><span class="p">){</span>
+        <span class="kd">var</span> <span class="nx">geometry</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">THREE</span><span class="p">.</span><span class="nx">SphereGeometry</span><span class="p">(</span> <span class="k">this</span><span class="p">.</span><span class="nx">sphereRadius</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">40</span> <span class="p">);</span>
+        <span class="nx">geometry</span><span class="p">.</span><span class="nx">scale</span><span class="p">(</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span> <span class="p">);</span>
+        <span class="kd">var</span> <span class="nx">loader</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">THREE</span><span class="p">.</span><span class="nx">TextureLoader</span><span class="p">();</span>
+        <span class="kd">var</span> <span class="nx">texture</span> <span class="o">=</span> <span class="nx">loader</span><span class="p">.</span><span class="nx">load</span><span class="p">(</span><span class="nx">image</span><span class="p">);</span>
+        <span class="kd">var</span> <span class="nx">material</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">THREE</span><span class="p">.</span><span class="nx">MeshBasicMaterial</span><span class="p">(</span> <span class="p">{</span>
+            <span class="nx">map</span><span class="o">:</span> <span class="nx">texture</span><span class="p">,</span>
+        <span class="p">}</span> <span class="p">);</span>
+        <span class="kd">var</span> <span class="nx">sphereMesh</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">THREE</span><span class="p">.</span><span class="nx">Mesh</span><span class="p">(</span> <span class="nx">geometry</span><span class="p">,</span> <span class="nx">material</span> <span class="p">);</span>
+        <span class="nx">sphereMesh</span><span class="p">.</span><span class="nx">name</span> <span class="o">=</span> <span class="s2">&quot;NTESPano_SphereWorld&quot;</span>
+        <span class="k">return</span> <span class="nx">sphereMesh</span><span class="p">;</span>
+    <span class="p">},</span>
+    <span class="nx">render</span> <span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">timestamp</span><span class="p">)</span> <span class="p">{</span>
+        <span class="nb">window</span><span class="p">.</span><span class="nx">requestAnimationFrame</span><span class="p">(</span> <span class="k">this</span><span class="p">.</span><span class="nx">render</span><span class="p">.</span><span class="nx">bind</span><span class="p">(</span><span class="k">this</span><span class="p">)</span> <span class="p">);</span>
+
+        <span class="c1">// do some thing...</span>
+    <span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h2 id="_2">世界坐标转换屏幕坐标系</h2>
+<div class="hlcode"><pre><span class="kd">var</span> <span class="nx">world_vector</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">THREE</span><span class="p">.</span><span class="nx">Vector3</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">);</span>
+<span class="kd">var</span> <span class="nx">vector</span> <span class="o">=</span> <span class="nx">world_vector</span><span class="p">.</span><span class="nx">project</span><span class="p">(</span><span class="nx">camera</span><span class="p">);</span>
+<span class="c1">// console.log(vector);</span>
+<span class="kd">var</span> <span class="nx">halfWidth</span> <span class="o">=</span> <span class="nx">container</span><span class="p">.</span><span class="nx">clientWidth</span> <span class="o">/</span> <span class="mi">2</span><span class="p">;</span>
+<span class="kd">var</span> <span class="nx">halfHeight</span> <span class="o">=</span> <span class="nx">container</span><span class="p">.</span><span class="nx">clientHeight</span> <span class="o">/</span> <span class="mi">2</span><span class="p">;</span>
+
+<span class="kd">var</span> <span class="nx">result</span> <span class="o">=</span> <span class="p">{</span>
+ <span class="nx">x</span><span class="o">:</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">round</span><span class="p">(</span><span class="nx">vector</span><span class="p">.</span><span class="nx">x</span> <span class="o">*</span> <span class="nx">halfWidth</span> <span class="o">+</span> <span class="nx">halfWidth</span><span class="p">),</span>
+ <span class="nx">y</span><span class="o">:</span> <span class="nb">Math</span><span class="p">.</span><span class="nx">round</span><span class="p">(</span><span class="o">-</span><span class="nx">vector</span><span class="p">.</span><span class="nx">y</span> <span class="o">*</span> <span class="nx">halfHeight</span> <span class="o">+</span> <span class="nx">halfHeight</span><span class="p">),</span>
+ <span class="nx">inside</span> <span class="o">:</span> <span class="p">(</span><span class="nx">vector</span><span class="p">.</span><span class="nx">z</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="o">&amp;&amp;</span> <span class="nx">vector</span><span class="p">.</span><span class="nx">z</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">)</span><span class="o">?</span> <span class="kc">true</span><span class="o">:</span><span class="kc">false</span>
+<span class="p">};</span>
+</pre></div>
+
+
+<p>转换后 vector 中 z 的值在 0-1 之间表示该坐标在相机视野内，其他值标识超出相机视野。</p>
+<h2 id="_3">事件检测</h2>
+<div class="hlcode"><pre><span class="kd">var</span> <span class="nx">mouse</span><span class="p">;</span>
+<span class="nx">mouse</span><span class="p">.</span><span class="nx">x</span> <span class="o">=</span> <span class="p">(</span> <span class="nx">event</span><span class="p">.</span><span class="nx">offsetX</span> <span class="o">/</span> <span class="nx">_domElement</span><span class="p">.</span><span class="nx">clientWidth</span> <span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">-</span> <span class="mi">1</span><span class="p">;</span>
+<span class="nx">mouse</span><span class="p">.</span><span class="nx">y</span> <span class="o">=</span> <span class="o">-</span> <span class="p">(</span> <span class="nx">event</span><span class="p">.</span><span class="nx">offsetY</span> <span class="o">/</span> <span class="nx">_domElement</span><span class="p">.</span><span class="nx">clientHeight</span> <span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+
+<span class="kd">var</span> <span class="nx">raycaster</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">THREE</span><span class="p">.</span><span class="nx">Raycaster</span><span class="p">();</span>
+<span class="nx">raycaster</span><span class="p">.</span><span class="nx">setFromCamera</span><span class="p">(</span><span class="nx">mouse</span><span class="p">,</span> <span class="nx">camera</span> <span class="p">);</span>
+<span class="kd">var</span> <span class="nx">intersects</span> <span class="o">=</span> <span class="nx">raycaster</span><span class="p">.</span><span class="nx">intersectObject</span><span class="p">(</span> <span class="nx">mesh</span> <span class="p">);</span>
+<span class="k">if</span> <span class="p">(</span><span class="nx">intersects</span><span class="p">.</span><span class="nx">length</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="p">{</span>
+    <span class="kd">var</span> <span class="nx">selected</span> <span class="o">=</span> <span class="nx">intersects</span><span class="p">[</span> <span class="mi">0</span> <span class="p">]</span>
+    <span class="kd">var</span> <span class="nx">point</span> <span class="o">=</span> <span class="nx">selected</span><span class="p">.</span><span class="nx">point</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h2 id="json">加载 json 模型</h2>
+<div class="hlcode"><pre><span class="kd">var</span> <span class="nx">jsonLoader</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">THREE</span><span class="p">.</span><span class="nx">JSONLoader</span><span class="p">();</span>
+<span class="kd">var</span> <span class="nx">mixer</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+<span class="nx">jsonLoader</span><span class="p">.</span><span class="nx">load</span><span class="p">(</span><span class="s1">&#39;images/json/huiji.js&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">geometry</span><span class="p">,</span> <span class="nx">materials</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// var material = new THREE.MeshFaceMaterial(materials);</span>
+
+    <span class="kd">var</span> <span class="nx">originalMaterial</span> <span class="o">=</span> <span class="nx">materials</span><span class="p">[</span> <span class="mi">0</span> <span class="p">];</span>
+    <span class="nx">originalMaterial</span><span class="p">.</span><span class="nx">skinning</span> <span class="o">=</span> <span class="kc">true</span><span class="p">;</span>
+    <span class="kd">var</span> <span class="nx">mesh</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">THREE</span><span class="p">.</span><span class="nx">SkinnedMesh</span><span class="p">(</span> <span class="nx">geometry</span><span class="p">,</span> <span class="nx">originalMaterial</span> <span class="p">);</span>
+    <span class="nx">mesh</span><span class="p">.</span><span class="nx">position</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span> <span class="p">);</span>
+    <span class="nx">mesh</span><span class="p">.</span><span class="nx">scale</span><span class="p">.</span><span class="nx">set</span><span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">);</span>
+    <span class="nx">scene</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">mesh</span><span class="p">);</span>
+
+    <span class="nx">mixer</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">THREE</span><span class="p">.</span><span class="nx">AnimationMixer</span><span class="p">(</span> <span class="nx">mesh</span> <span class="p">);</span>
+    <span class="kd">var</span> <span class="nx">sceneAnimationClip</span> <span class="o">=</span> <span class="nx">geometry</span><span class="p">.</span><span class="nx">animations</span><span class="p">[</span><span class="mi">0</span><span class="p">];</span>
+    <span class="kd">var</span> <span class="nx">anima</span> <span class="o">=</span> <span class="nx">mixer</span><span class="p">.</span><span class="nx">clipAction</span><span class="p">(</span> <span class="nx">sceneAnimationClip</span> <span class="p">);</span>
+    <span class="nx">anima</span><span class="p">.</span><span class="nx">play</span><span class="p">();</span>
+<span class="p">});</span>
+
+<span class="kd">function</span> <span class="nx">render</span><span class="p">(){</span>
+    <span class="c1">// 在渲染方法中更新动画</span>
+    <span class="kd">var</span> <span class="nx">delta</span> <span class="o">=</span> <span class="nx">clock</span><span class="p">.</span><span class="nx">getDelta</span><span class="p">();</span>
+    <span class="k">if</span><span class="p">(</span> <span class="nx">mixer</span> <span class="p">)</span> <span class="p">{</span>
+        <span class="nx">mixer</span><span class="p">.</span><span class="nx">update</span><span class="p">(</span><span class="nx">delta</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">this</span><span class="p">.</span><span class="nx">renderer</span><span class="p">.</span><span class="nx">clear</span><span class="p">();</span>
+<span class="p">}</span>
+</pre></div>
+    </div>
+
+        </div>
+        <div id="footer">
+            <span>
+                Copyright © 2016 <a href="http://honglu.me" target="_blank">独奏</a>.
+                Powered by <a href="http://simiki.org/" target="_blank">Simiki</a>.
+            </span>
+        </div>
+        
+    </body>
+</html>
