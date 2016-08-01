@@ -1,0 +1,56 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel="Stylesheet" type="text/css" href="/static/css/style.css">
+        <link rel="Stylesheet" type="text/css" href="/static/css/tango.css">
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+        <link rel="icon" href="/favicon.ico" type="image/x-icon">
+        <title>Git命令 - 独奏's Wiki</title>
+        <meta name="keywords" content="Wiki, 独奏, 鸿禄"/>
+        <meta name="description" content="独奏的个人 Wiki，独奏的 Blog 地址：http://homglu.me。"/>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body>
+        <div id="container">
+            
+    <div id="header">
+        <div id="post-nav">
+            
+            <a href="/">Home</a> » <a href="/#Other">Other</a> » Git命令
+            
+        </div>
+    </div>
+    <div class="clearfix"></div>
+    <div id="title">Git命令</div>
+    <div id="content">
+        <div class="toc"><span class="toctitle">Table of Contents</span><ul>
+<li><a href="#_1">镜像</a></li>
+</ul>
+</div>
+<h2 id="_1">镜像</h2>
+<p>1 从原地址克隆一份裸版本库，比如原本托管于 GitHub。</p>
+<div class="hlcode"><pre>git clone --bare git://github.com/username/project.git
+</pre></div>
+
+
+<p>2 然后到新的 Git 服务器上创建一个新项目，比如 GitCafe。</p>
+<p>3 以镜像推送的方式上传代码到 GitCafe 服务器上。</p>
+<div class="hlcode"><pre><span class="nb">cd </span>project.git
+git push --mirror git@gitcafe.com/username/newproject.git
+</pre></div>
+
+
+<p>这种方式可以保留原版本库中的所有内容。</p>
+    </div>
+
+        </div>
+        <div id="footer">
+            <span>
+                Copyright © 2016 <a href="http://honglu.me" target="_blank">独奏</a>.
+                Powered by <a href="http://simiki.org/" target="_blank">Simiki</a>.
+            </span>
+        </div>
+        
+    </body>
+</html>
