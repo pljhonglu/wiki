@@ -26,6 +26,7 @@
     <div id="content">
         <div class="toc"><span class="toctitle">Table of Contents</span><ul>
 <li><a href="#_1">镜像</a></li>
+<li><a href="#_2">修改远程仓库地址</a></li>
 </ul>
 </div>
 <h2 id="_1">镜像</h2>
@@ -42,6 +43,12 @@ git push --mirror git@gitcafe.com/username/newproject.git
 
 
 <p>这种方式可以保留原版本库中的所有内容。</p>
+<h2 id="_2">修改远程仓库地址</h2>
+<div class="hlcode"><pre>// 查看
+git branch -r
+// 修改
+git remote <span class="nb">set</span>-url origin remote_git_address
+</pre></div>
     </div>
 
         </div>
