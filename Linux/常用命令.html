@@ -1,0 +1,91 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel="Stylesheet" type="text/css" href="/static/css/style.css">
+        <link rel="Stylesheet" type="text/css" href="/static/css/tango.css">
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+        <link rel="icon" href="/favicon.ico" type="image/x-icon">
+        <title>常用命令 - 独奏's Wiki</title>
+        <meta name="keywords" content="Wiki, 独奏, 鸿禄"/>
+        <meta name="description" content="独奏的个人 Wiki，独奏的 Blog 地址：http://homglu.me。"/>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body>
+        <div id="container">
+            
+    <div id="header">
+        <div id="post-nav">
+            
+            <a href="/">Home</a> » <a href="/#Linux">Linux</a> » 常用命令
+            
+        </div>
+    </div>
+    <div class="clearfix"></div>
+    <div id="title">常用命令</div>
+    <div id="content">
+        <div class="toc"><span class="toctitle">Table of Contents</span><ul>
+<li><a href="#ls">ls</a></li>
+<li><a href="#useradd">useradd</a></li>
+<li><a href="#_1">切换当前用户</a></li>
+</ul>
+</div>
+<h1 id="ls">ls</h1>
+<div class="hlcode"><pre><span class="err">$</span> <span class="n">ls</span> <span class="o">-</span><span class="n">all</span>
+<span class="n">total</span> <span class="mi">3</span>
+<span class="n">drwxrwxrwx</span>  <span class="mi">26</span> <span class="n">aaa</span>  <span class="n">root</span>     <span class="mi">884</span>  <span class="mi">8</span> <span class="mi">16</span> <span class="mi">14</span><span class="o">:</span><span class="mi">43</span> <span class="p">.</span>
+<span class="n">drwxrwxrwx</span>  <span class="mi">34</span> <span class="n">aaa</span>  <span class="n">root</span>    <span class="mi">1156</span>  <span class="mi">8</span>  <span class="mi">3</span> <span class="mi">18</span><span class="o">:</span><span class="mi">12</span> <span class="p">..</span>
+<span class="o">-</span><span class="n">rwxrwxrwx</span>   <span class="mi">1</span> <span class="n">aaa</span>  <span class="n">root</span>      <span class="mi">61</span>  <span class="mi">3</span> <span class="mi">29</span> <span class="mi">14</span><span class="o">:</span><span class="mi">55</span> <span class="n">myfile</span>
+</pre></div>
+
+
+<p>列含义:</p>
+<ul>
+<li>权限：第一个字母表示文件类型，<code>-</code> 表示普通文件，<code>d</code> 表示是一个目录，后面三个一组，分别表示 <code>所有者/用户组/其他用户</code> 的相应权限</li>
+<li>文件数：文件硬连接数或子目录数</li>
+<li>所有者：该文件所有者</li>
+<li>用户组：文件所有者所在用户组</li>
+<li>大小：字节为单位</li>
+<li>创建月份</li>
+<li>创建日期</li>
+<li>创建时间</li>
+<li>文件名</li>
+</ul>
+<h1 id="useradd">useradd</h1>
+<div class="hlcode"><pre>// 创建用户组
+groupadd group
+
+// 增加一个新用户到附加用户组
+useradd -G group user
+
+// 增加一个新用户到主要用户组
+useradd -g group user
+
+// 将一个已有用户增加到一个已有用户组中
+usermod -a -G groupuser
+
+// 将一个用户从某个组中删除
+gpasswd -d user group
+</pre></div>
+
+
+<ul>
+<li>用户组文件: /etc/group</li>
+<li>用户文件: /etc/passwd</li>
+</ul>
+<h1 id="_1">切换当前用户</h1>
+<div class="hlcode"><pre>// 使用 www 用户执行 git pull 命令
+sudo -u www git pull
+</pre></div>
+    </div>
+
+        </div>
+        <div id="footer">
+            <span>
+                Copyright © 2016 <a href="http://honglu.me" target="_blank">独奏</a>.
+                Powered by <a href="http://simiki.org/" target="_blank">Simiki</a>.
+            </span>
+        </div>
+        
+    </body>
+</html>

@@ -1,0 +1,157 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel="Stylesheet" type="text/css" href="/static/css/style.css">
+        <link rel="Stylesheet" type="text/css" href="/static/css/tango.css">
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+        <link rel="icon" href="/favicon.ico" type="image/x-icon">
+        <title>artisan - 独奏's Wiki</title>
+        <meta name="keywords" content="Wiki, 独奏, 鸿禄"/>
+        <meta name="description" content="独奏的个人 Wiki，独奏的 Blog 地址：http://homglu.me。"/>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body>
+        <div id="container">
+            
+    <div id="header">
+        <div id="post-nav">
+            
+            <a href="/">Home</a> » <a href="/#Laravel">Laravel</a> » artisan
+            
+        </div>
+    </div>
+    <div class="clearfix"></div>
+    <div id="title">artisan</div>
+    <div id="content">
+        <div class="toc"><span class="toctitle">Table of Contents</span><ul>
+<li><a href="#artisan">artisan</a><ul>
+<li><a href="#_1">路由</a></li>
+<li><a href="#_2">创建</a></li>
+<li><a href="#_3">缓存</a></li>
+<li><a href="#_4">数据库</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<h1 id="artisan">artisan</h1>
+<div class="hlcode"><pre>// 启动内置服务器
+php artisan serve
+</pre></div>
+
+
+<h2 id="_1">路由</h2>
+<div class="hlcode"><pre>// 生成路由缓存文件来提升路由效率
+php artisan route:cache
+// 移除路由缓存文件
+php artisan route:clear
+// 显示已注册过的路由
+php artisan route:list
+</pre></div>
+
+
+<h2 id="_2">创建</h2>
+<div class="hlcode"><pre>// 生成应用的 key（会覆盖）
+php artisan key:generate
+
+// 在默认情况下, 这将创建未加入队列的自处理命令
+ // 通过 --handler 标识来生成一个处理器, 用 --queued 来使其入队列.
+php artisan make:command <span class="o">[</span>--handler<span class="o">]</span> <span class="o">[</span>--queued<span class="o">]</span> name
+
+// 创建一个新的 Artisan 命令
+ //  --command     命令被调用的名称。 <span class="o">(</span>默认为: <span class="s2">&quot;command:name&quot;</span><span class="o">)</span>
+php artisan make:console <span class="o">[</span>--command<span class="o">[=</span><span class="s2">&quot;...&quot;</span><span class="o">]]</span> name
+
+// 创建一个新的资源控制器
+ // --plain      生成一个空白的控制器类
+php artisan make:controller <span class="o">[</span>--plain<span class="o">]</span> name
+php artisan make:controller App<span class="se">\\</span>Admin<span class="se">\\</span>Http<span class="se">\\</span>Controllers<span class="se">\\</span>DashboardController
+
+// 创建一个新的事件类
+php artisan make:event name
+
+// 创建一个新的中间件类
+php artisan make:middleware name
+
+// 创建一个新的迁移文件
+ // --create     将被创建的数据表.
+ // --table      将被迁移的数据表.
+php artisan make:migration <span class="o">[</span>--create<span class="o">[=</span><span class="s2">&quot;...&quot;</span><span class="o">]]</span> <span class="o">[</span>--table<span class="o">[=</span><span class="s2">&quot;...&quot;</span><span class="o">]]</span> name
+
+// 创建一个新的 Eloquent 模型类
+php artisan make:model Models/name
+
+// 创建一个新的服务提供者类
+php artisan make:provider name
+
+// 创建一个新的表单请求类
+php artisan make:request name
+</pre></div>
+
+
+<h2 id="_3">缓存</h2>
+<div class="hlcode"><pre>// 清空应用缓存
+php artisan cache:clear
+
+// 创建缓存数据库表 migration
+php artisan cache:table
+
+// 合并所有的配置信息为一个，提高加载速度
+php artisan config:cache
+
+// 移除配置缓存文件
+php artisan config:clear
+</pre></div>
+
+
+<h2 id="_4">数据库</h2>
+<div class="hlcode"><pre>// 创建一个新的迁移文件
+ // --create     将被创建的数据表.
+ // --table      将被迁移的数据表.
+php artisan make:migration <span class="o">[</span>--create<span class="o">[=</span><span class="s2">&quot;...&quot;</span><span class="o">]]</span> <span class="o">[</span>--table<span class="o">[=</span><span class="s2">&quot;...&quot;</span><span class="o">]]</span> name
+
+// 创建一个新的数据填充文件
+php artisan make:seeder UserTableSeeder
+
+// 数据库迁移（创建数据表）
+ // --database   指定数据库连接（下同）
+ // --force      当处于生产环境时强制执行，不询问（下同）
+ // --path       指定单独迁移文件地址
+ // --pretend    把将要运行的 SQL 语句打印出来（下同）
+ // --seed       Seed 任务是否需要被重新运行（下同）
+php artisan migrate <span class="o">[</span>--database<span class="o">[=</span><span class="s2">&quot;...&quot;</span><span class="o">]]</span> <span class="o">[</span>--force<span class="o">]</span> <span class="o">[</span>--path<span class="o">[=</span><span class="s2">&quot;...&quot;</span><span class="o">]]</span> <span class="o">[</span>--pretend<span class="o">]</span> <span class="o">[</span>--seed<span class="o">]</span>
+
+// 创建迁移数据库表
+php artisan migrate:install <span class="o">[</span>--database<span class="o">[=</span><span class="s2">&quot;...&quot;</span><span class="o">]]</span>
+
+// 重置并重新运行所有的 migrations
+ // --seeder     指定主 Seeder 的类名
+php artisan migrate:refresh <span class="o">[</span>--database<span class="o">[=</span><span class="s2">&quot;...&quot;</span><span class="o">]]</span> <span class="o">[</span>--force<span class="o">]</span> <span class="o">[</span>--seed<span class="o">]</span> <span class="o">[</span>--seeder<span class="o">[=</span><span class="s2">&quot;...&quot;</span><span class="o">]]</span>
+
+// 回滚所有的数据库迁移
+php artisan migrate:reset <span class="o">[</span>--database<span class="o">[=</span><span class="s2">&quot;...&quot;</span><span class="o">]]</span> <span class="o">[</span>--force<span class="o">]</span> <span class="o">[</span>--pretend<span class="o">]</span>
+
+// 回滚最最近一次运行的迁移任务
+php artisan migrate:rollback <span class="o">[</span>--database<span class="o">[=</span><span class="s2">&quot;...&quot;</span><span class="o">]]</span> <span class="o">[</span>--force<span class="o">]</span> <span class="o">[</span>--pretend<span class="o">]</span>
+
+// migrations 数据库表信息
+php artisan migrate:status
+
+// 运行所有的 seed 假数据生成类
+// --class      可以指定运行的类，默认是: <span class="s2">&quot;DatabaseSeeder&quot;</span>
+// --database   可以指定数据库
+// --force      当处于生产环境时强制执行操作
+php artisan db:seed <span class="o">[</span>--class<span class="o">[=</span><span class="s2">&quot;...&quot;</span><span class="o">]]</span> <span class="o">[</span>--database<span class="o">[=</span><span class="s2">&quot;...&quot;</span><span class="o">]]</span> <span class="o">[</span>--force<span class="o">]</span>
+</pre></div>
+    </div>
+
+        </div>
+        <div id="footer">
+            <span>
+                Copyright © 2016 <a href="http://honglu.me" target="_blank">独奏</a>.
+                Powered by <a href="http://simiki.org/" target="_blank">Simiki</a>.
+            </span>
+        </div>
+        
+    </body>
+</html>
