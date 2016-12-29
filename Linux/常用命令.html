@@ -28,6 +28,7 @@
 <li><a href="#ls">ls</a></li>
 <li><a href="#useradd">useradd</a></li>
 <li><a href="#_1">切换当前用户</a></li>
+<li><a href="#_2">修改文件用户组</a></li>
 </ul>
 </div>
 <h1 id="ls">ls</h1>
@@ -77,6 +78,14 @@ gpasswd -d user group
 <div class="hlcode"><pre>// 使用 www 用户执行 git pull 命令
 sudo -u www git pull
 </pre></div>
+
+
+<h1 id="_2">修改文件用户组</h1>
+<div class="hlcode"><pre><span class="n">chwon</span> <span class="n">user</span><span class="o">:</span><span class="n">group</span>
+</pre></div>
+
+
+<p>对于 root 用户，可以修改为任意用户组，即使用户组内没有 root 用户也可以；其他用户，必须为自己所在的用户组。</p>
     </div>
 
         </div>
