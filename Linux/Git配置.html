@@ -28,6 +28,7 @@
 <li><a href="#ssh-key">生成 ssh key</a></li>
 <li><a href="#github">在 github 上面设置公钥。</a></li>
 <li><a href="#git-config">配置 git config</a></li>
+<li><a href="#_1">配置某网段禁用公钥检查</a></li>
 </ul>
 </div>
 <h2 id="ssh-key">生成 ssh key</h2>
@@ -85,12 +86,28 @@ The key<span class="err">&#39;</span>s randomart image is:
     <span class="n">Port</span> <span class="mi">443</span>
     <span class="n">IdentityFile</span> <span class="o">~/</span><span class="p">.</span><span class="n">ssh</span><span class="o">/</span><span class="n">github</span>
 </pre></div>
+
+
+<h2 id="_1">配置某网段禁用公钥检查</h2>
+<div class="hlcode"><pre><span class="n">HOST</span> <span class="mf">10.235</span><span class="p">.</span><span class="o">*</span><span class="p">.</span><span class="o">*</span>
+    <span class="n">HostName</span> <span class="o">%</span><span class="n">h</span>
+    <span class="n">Port</span> <span class="mi">22</span>
+    <span class="n">StrictHostKeyChecking</span> <span class="n">no</span>
+    <span class="n">UserKnownHostsFile</span> <span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="n">null</span>
+</pre></div>
+
+
+<p>参考: </p>
+<ul>
+<li><a href="http://www.hi-linux.com/posts/14346.html">利用SSH的用户配置文件Config管理SSH会话</a>  </li>
+<li><a href="http://www.voidcn.com/blog/yhcharles/article/p-5761555.html">禁用ssh公钥检查</a></li>
+</ul>
     </div>
 
         </div>
         <div id="footer">
             <span>
-                Copyright © 2016 <a href="http://honglu.me" target="_blank">独奏</a>.
+                Copyright © 2017 <a href="http://honglu.me" target="_blank">独奏</a>.
                 Powered by <a href="http://simiki.org/" target="_blank">Simiki</a>.
             </span>
         </div>
