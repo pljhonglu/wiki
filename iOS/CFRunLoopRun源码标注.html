@@ -1,0 +1,503 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel="Stylesheet" type="text/css" href="/static/css/style.css">
+        <link rel="Stylesheet" type="text/css" href="/static/css/tango.css">
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+        <link rel="icon" href="/favicon.ico" type="image/x-icon">
+        <title>CFRunLoopRun源码标注 - 独奏's Wiki</title>
+        <meta name="keywords" content="Wiki, 独奏, 鸿禄"/>
+        <meta name="description" content="独奏的个人 Wiki，独奏的 Blog 地址：http://homglu.me。"/>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body>
+        <div id="container">
+            
+    <div id="header">
+        <div id="post-nav">
+            
+            <a href="/">Home</a> » <a href="/#iOS">iOS</a> » CFRunLoopRun源码标注
+            
+        </div>
+    </div>
+    <div class="clearfix"></div>
+    <div id="title">CFRunLoopRun源码标注</div>
+    <div id="content">
+        <div class="toc"><span class="toctitle">Table of Contents</span><ul>
+<li><a href="#cfrunlooprunc">CFRunLoopRun.c</a></li>
+<li><a href="#cfrunlooprunspecificc">CFRunLoopRunSpecific.c</a></li>
+<li><a href="#cfrunloopservicemachportc">CFRunLoopServiceMachPort.c</a></li>
+</ul>
+</div>
+<h2 id="cfrunlooprunc">CFRunLoopRun.c</h2>
+<div class="hlcode"><pre><span class="cm">/**</span>
+<span class="cm"> *  运行run loop</span>
+<span class="cm"> *</span>
+<span class="cm"> *  @param rl              运行的RunLoop对象</span>
+<span class="cm"> *  @param rlm             运行的mode</span>
+<span class="cm"> *  @param seconds         run loop超时时间</span>
+<span class="cm"> *  @param stopAfterHandle true:run loop处理完事件就退出  false:一直运行直到超时或者被手动终止</span>
+<span class="cm"> *  @param previousMode    上一次运行的mode</span>
+<span class="cm"> *</span>
+<span class="cm"> *  @return 返回4种状态</span>
+<span class="cm"> */</span>
+<span class="k">static</span> <span class="kt">int32_t</span> <span class="nf">__CFRunLoopRun</span><span class="p">(</span><span class="n">CFRunLoopRef</span> <span class="n">rl</span><span class="p">,</span> <span class="n">CFRunLoopModeRef</span> <span class="n">rlm</span><span class="p">,</span> <span class="n">CFTimeInterval</span> <span class="n">seconds</span><span class="p">,</span> <span class="n">Boolean</span> <span class="n">stopAfterHandle</span><span class="p">,</span> <span class="n">CFRunLoopModeRef</span> <span class="n">previousMode</span><span class="p">)</span> <span class="p">{</span>
+    <span class="c1">// 获取系统启动后的CPU运行时间，用于控制超时时间</span>
+    <span class="kt">uint64_t</span> <span class="n">startTSR</span> <span class="o">=</span> <span class="n">mach_absolute_time</span><span class="p">();</span>
+
+    <span class="c1">// 如果RunLoop或者mode是stop状态，则直接return，不进入循环</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">__CFRunLoopIsStopped</span><span class="p">(</span><span class="n">rl</span><span class="p">))</span> <span class="p">{</span>
+        <span class="n">__CFRunLoopUnsetStopped</span><span class="p">(</span><span class="n">rl</span><span class="p">);</span>
+        <span class="k">return</span> <span class="n">kCFRunLoopRunStopped</span><span class="p">;</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">rlm</span><span class="o">-&gt;</span><span class="n">_stopped</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">rlm</span><span class="o">-&gt;</span><span class="n">_stopped</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+        <span class="k">return</span> <span class="n">kCFRunLoopRunStopped</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="c1">// mach端口，内核进程通信消息端口。初始为0</span>
+    <span class="kt">mach_port_name_t</span> <span class="n">dispatchPort</span> <span class="o">=</span> <span class="n">MACH_PORT_NULL</span><span class="p">;</span>
+    <span class="c1">// 判断是否为主线程</span>
+    <span class="n">Boolean</span> <span class="n">libdispatchQSafe</span> <span class="o">=</span> <span class="n">pthread_main_np</span><span class="p">()</span> <span class="o">&amp;&amp;</span> <span class="p">((</span><span class="n">HANDLE_DISPATCH_ON_BASE_INVOCATION_ONLY</span> <span class="o">&amp;&amp;</span> <span class="nb">NULL</span> <span class="o">==</span> <span class="n">previousMode</span><span class="p">)</span> <span class="o">||</span> <span class="p">(</span><span class="o">!</span><span class="n">HANDLE_DISPATCH_ON_BASE_INVOCATION_ONLY</span> <span class="o">&amp;&amp;</span> <span class="mi">0</span> <span class="o">==</span> <span class="n">_CFGetTSD</span><span class="p">(</span><span class="n">__CFTSDKeyIsInGCDMainQ</span><span class="p">)));</span>
+    <span class="c1">// 如果在主线程 &amp;&amp; runloop是主线程的runloop &amp;&amp; 该mode是commonMode，则给 dispatchPort 赋值为主线程收发消息的端口</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">libdispatchQSafe</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">CFRunLoopGetMain</span><span class="p">()</span> <span class="o">==</span> <span class="n">rl</span><span class="p">)</span> <span class="o">&amp;&amp;</span> <span class="n">CFSetContainsValue</span><span class="p">(</span><span class="n">rl</span><span class="o">-&gt;</span><span class="n">_commonModes</span><span class="p">,</span> <span class="n">rlm</span><span class="o">-&gt;</span><span class="n">_name</span><span class="p">))</span> <span class="n">dispatchPort</span> <span class="o">=</span> <span class="n">_dispatch_get_main_queue_port_4CF</span><span class="p">();</span>
+
+<span class="cp">#if USE_DISPATCH_SOURCE_FOR_TIMERS</span>
+    <span class="kt">mach_port_name_t</span> <span class="n">modeQueuePort</span> <span class="o">=</span> <span class="n">MACH_PORT_NULL</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">rlm</span><span class="o">-&gt;</span><span class="n">_queue</span><span class="p">)</span> <span class="p">{</span>
+        <span class="c1">// modeQueuePort 赋值为 dispatch 端口</span>
+        <span class="n">modeQueuePort</span> <span class="o">=</span> <span class="n">_dispatch_runloop_root_queue_get_port_4CF</span><span class="p">(</span><span class="n">rlm</span><span class="o">-&gt;</span><span class="n">_queue</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">modeQueuePort</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">CRASH</span><span class="p">(</span><span class="s">&quot;Unable to get port for run loop mode queue (%d)&quot;</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">);</span>
+        <span class="p">}</span>
+    <span class="p">}</span>
+<span class="cp">#endif</span>
+    <span class="c1">// GCD管理的定时器，用于实现runloop超时机制</span>
+    <span class="kt">dispatch_source_t</span> <span class="n">timeout_timer</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+    <span class="k">struct</span> <span class="n">__timeout_context</span> <span class="o">*</span><span class="n">timeout_context</span> <span class="o">=</span> <span class="p">(</span><span class="k">struct</span> <span class="n">__timeout_context</span> <span class="o">*</span><span class="p">)</span><span class="n">malloc</span><span class="p">(</span><span class="k">sizeof</span><span class="p">(</span><span class="o">*</span><span class="n">timeout_context</span><span class="p">));</span>
+    <span class="c1">// 立即超时</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">seconds</span> <span class="o">&lt;=</span> <span class="mf">0.0</span><span class="p">)</span> <span class="p">{</span> <span class="c1">// instant timeout</span>
+        <span class="n">seconds</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">;</span>
+        <span class="n">timeout_context</span><span class="o">-&gt;</span><span class="n">termTSR</span> <span class="o">=</span> <span class="mi">0ULL</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="c1">// seconds为超时时间，超时时执行__CFRunLoopTimeout函数 </span>
+    <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">seconds</span> <span class="o">&lt;=</span> <span class="n">TIMER_INTERVAL_LIMIT</span><span class="p">)</span> <span class="p">{</span>
+        <span class="c1">// 启动一个 dispatch timer 来监控超时</span>
+        <span class="kt">dispatch_queue_t</span> <span class="n">queue</span> <span class="o">=</span> <span class="n">dispatch_get_global_queue</span><span class="p">(</span><span class="n">DISPATCH_QUEUE_PRIORITY_HIGH</span><span class="p">,</span> <span class="n">DISPATCH_QUEUE_OVERCOMMIT</span><span class="p">);</span>
+        <span class="n">timeout_timer</span> <span class="o">=</span> <span class="n">dispatch_source_create</span><span class="p">(</span><span class="n">DISPATCH_SOURCE_TYPE_TIMER</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">queue</span><span class="p">);</span>
+        <span class="n">dispatch_retain</span><span class="p">(</span><span class="n">timeout_timer</span><span class="p">);</span>
+        <span class="n">timeout_context</span><span class="o">-&gt;</span><span class="n">ds</span> <span class="o">=</span> <span class="n">timeout_timer</span><span class="p">;</span>
+        <span class="n">timeout_context</span><span class="o">-&gt;</span><span class="n">rl</span> <span class="o">=</span> <span class="p">(</span><span class="n">CFRunLoopRef</span><span class="p">)</span><span class="n">CFRetain</span><span class="p">(</span><span class="n">rl</span><span class="p">);</span>
+        <span class="n">timeout_context</span><span class="o">-&gt;</span><span class="n">termTSR</span> <span class="o">=</span> <span class="n">startTSR</span> <span class="o">+</span> <span class="n">__CFTimeIntervalToTSR</span><span class="p">(</span><span class="n">seconds</span><span class="p">);</span>
+        <span class="n">dispatch_set_context</span><span class="p">(</span><span class="n">timeout_timer</span><span class="p">,</span> <span class="n">timeout_context</span><span class="p">);</span> <span class="c1">// source gets ownership of context</span>
+        <span class="n">dispatch_source_set_event_handler_f</span><span class="p">(</span><span class="n">timeout_timer</span><span class="p">,</span> <span class="n">__CFRunLoopTimeout</span><span class="p">);</span>
+        <span class="n">dispatch_source_set_cancel_handler_f</span><span class="p">(</span><span class="n">timeout_timer</span><span class="p">,</span> <span class="n">__CFRunLoopTimeoutCancel</span><span class="p">);</span>
+        <span class="kt">uint64_t</span> <span class="n">ns_at</span> <span class="o">=</span> <span class="p">(</span><span class="kt">uint64_t</span><span class="p">)((</span><span class="n">__CFTSRToTimeInterval</span><span class="p">(</span><span class="n">startTSR</span><span class="p">)</span> <span class="o">+</span> <span class="n">seconds</span><span class="p">)</span> <span class="o">*</span> <span class="mi">1000000000ULL</span><span class="p">);</span>
+        <span class="n">dispatch_source_set_timer</span><span class="p">(</span><span class="n">timeout_timer</span><span class="p">,</span> <span class="n">dispatch_time</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">ns_at</span><span class="p">),</span> <span class="n">DISPATCH_TIME_FOREVER</span><span class="p">,</span> <span class="mi">1000ULL</span><span class="p">);</span>
+        <span class="n">dispatch_resume</span><span class="p">(</span><span class="n">timeout_timer</span><span class="p">);</span>
+    <span class="p">}</span> 
+    <span class="c1">// 永不超时</span>
+    <span class="k">else</span> <span class="p">{</span> <span class="c1">// infinite timeout</span>
+        <span class="n">seconds</span> <span class="o">=</span> <span class="mf">9999999999.0</span><span class="p">;</span>
+        <span class="n">timeout_context</span><span class="o">-&gt;</span><span class="n">termTSR</span> <span class="o">=</span> <span class="n">UINT64_MAX</span><span class="p">;</span>
+    <span class="p">}</span>
+
+    <span class="c1">// 标志位默认为true</span>
+    <span class="n">Boolean</span> <span class="n">didDispatchPortLastTime</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+    <span class="c1">// 记录最后runloop状态，用于return 退出 runloop</span>
+    <span class="kt">int32_t</span> <span class="n">retVal</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+    <span class="k">do</span> <span class="p">{</span>
+        <span class="c1">// 初始化一个存放内核消息的缓冲池</span>
+        <span class="kt">uint8_t</span> <span class="n">msg_buffer</span><span class="p">[</span><span class="mi">3</span> <span class="o">*</span> <span class="mi">1024</span><span class="p">];</span>
+<span class="cp">#if DEPLOYMENT_TARGET_MACOSX || DEPLOYMENT_TARGET_EMBEDDED || DEPLOYMENT_TARGET_EMBEDDED_MINI</span>
+        <span class="kt">mach_msg_header_t</span> <span class="o">*</span><span class="n">msg</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+        <span class="c1">// 活动端口，本地用来接收消息的端口</span>
+        <span class="kt">mach_port_t</span> <span class="n">livePort</span> <span class="o">=</span> <span class="n">MACH_PORT_NULL</span><span class="p">;</span>
+<span class="cp">#elif DEPLOYMENT_TARGET_WINDOWS</span>
+        <span class="n">HANDLE</span> <span class="n">livePort</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+        <span class="n">Boolean</span> <span class="n">windowsMessageReceived</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+<span class="cp">#endif</span>
+        <span class="c1">// 取所有需要监听的port</span>
+        <span class="n">__CFPortSet</span> <span class="n">waitSet</span> <span class="o">=</span> <span class="n">rlm</span><span class="o">-&gt;</span><span class="n">_portSet</span><span class="p">;</span>
+
+        <span class="c1">// 设置RunLoop为可以被唤醒状态</span>
+        <span class="n">__CFRunLoopUnsetIgnoreWakeUps</span><span class="p">(</span><span class="n">rl</span><span class="p">);</span>
+        <span class="c1">// 2. 通知observer，即将触发timer回调，处理timer事件</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">rlm</span><span class="o">-&gt;</span><span class="n">_observerMask</span> <span class="o">&amp;</span> <span class="n">kCFRunLoopBeforeTimers</span><span class="p">)</span> <span class="n">__CFRunLoopDoObservers</span><span class="p">(</span><span class="n">rl</span><span class="p">,</span> <span class="n">rlm</span><span class="p">,</span> <span class="n">kCFRunLoopBeforeTimers</span><span class="p">);</span>
+        <span class="c1">// 3. 通知observer，即将触发Source0回调</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">rlm</span><span class="o">-&gt;</span><span class="n">_observerMask</span> <span class="o">&amp;</span> <span class="n">kCFRunLoopBeforeSources</span><span class="p">)</span> <span class="n">__CFRunLoopDoObservers</span><span class="p">(</span><span class="n">rl</span><span class="p">,</span> <span class="n">rlm</span><span class="p">,</span> <span class="n">kCFRunLoopBeforeSources</span><span class="p">);</span>
+
+        <span class="c1">// 执行加入当前 runloop 的 block</span>
+        <span class="n">__CFRunLoopDoBlocks</span><span class="p">(</span><span class="n">rl</span><span class="p">,</span> <span class="n">rlm</span><span class="p">);</span>
+
+        <span class="c1">// 4. 处理 source0 事件</span>
+        <span class="c1">// 有事件处理返回 true，没有事件返回 false</span>
+        <span class="n">Boolean</span> <span class="n">sourceHandledThisLoop</span> <span class="o">=</span> <span class="n">__CFRunLoopDoSources0</span><span class="p">(</span><span class="n">rl</span><span class="p">,</span> <span class="n">rlm</span><span class="p">,</span> <span class="n">stopAfterHandle</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">sourceHandledThisLoop</span><span class="p">)</span> <span class="p">{</span>
+            <span class="c1">// 执行加入当前 runloop 的 block</span>
+            <span class="n">__CFRunLoopDoBlocks</span><span class="p">(</span><span class="n">rl</span><span class="p">,</span> <span class="n">rlm</span><span class="p">);</span>
+        <span class="p">}</span>
+
+        <span class="c1">// 如果没有 Sources0 事件处理 并且 没有超时，poll 为 false</span>
+        <span class="c1">// 如果有 Sources0 事件处理 或者 超时，poll 都为 true</span>
+        <span class="n">Boolean</span> <span class="n">poll</span> <span class="o">=</span> <span class="n">sourceHandledThisLoop</span> <span class="o">||</span> <span class="p">(</span><span class="mi">0ULL</span> <span class="o">==</span> <span class="n">timeout_context</span><span class="o">-&gt;</span><span class="n">termTSR</span><span class="p">);</span>
+        <span class="c1">// 第一次do..whil循环不会走该分支，因为 didDispatchPortLastTime 初始化是 true</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">MACH_PORT_NULL</span> <span class="o">!=</span> <span class="n">dispatchPort</span> <span class="o">&amp;&amp;</span> <span class="o">!</span><span class="n">didDispatchPortLastTime</span><span class="p">)</span> <span class="p">{</span>
+<span class="cp">#if DEPLOYMENT_TARGET_MACOSX || DEPLOYMENT_TARGET_EMBEDDED || DEPLOYMENT_TARGET_EMBEDDED_MINI</span>
+            <span class="c1">// 从缓冲区读取消息</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="kt">mach_msg_header_t</span> <span class="o">*</span><span class="p">)</span><span class="n">msg_buffer</span><span class="p">;</span>
+            <span class="c1">// 5. 接收 dispatchPort 端口的消息，dispatch 到 main queue 的事件。</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">__CFRunLoopServiceMachPort</span><span class="p">(</span><span class="n">dispatchPort</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">msg</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">msg_buffer</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">livePort</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="p">{</span>
+                <span class="c1">// 如果接收到了消息的话，前往 handle_msg 开始处理 msg</span>
+                <span class="k">goto</span> <span class="n">handle_msg</span><span class="p">;</span>
+            <span class="p">}</span>
+<span class="cp">#elif DEPLOYMENT_TARGET_WINDOWS</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">__CFRunLoopWaitForMultipleObjects</span><span class="p">(</span><span class="nb">NULL</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">dispatchPort</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">livePort</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">))</span> <span class="p">{</span>
+                <span class="k">goto</span> <span class="n">handle_msg</span><span class="p">;</span>
+            <span class="p">}</span>
+<span class="cp">#endif</span>
+        <span class="p">}</span>
+
+        <span class="n">didDispatchPortLastTime</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+
+        <span class="c1">// 6. 通知观察者RunLoop即将进入休眠</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">poll</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">rlm</span><span class="o">-&gt;</span><span class="n">_observerMask</span> <span class="o">&amp;</span> <span class="n">kCFRunLoopBeforeWaiting</span><span class="p">))</span> <span class="n">__CFRunLoopDoObservers</span><span class="p">(</span><span class="n">rl</span><span class="p">,</span> <span class="n">rlm</span><span class="p">,</span> <span class="n">kCFRunLoopBeforeWaiting</span><span class="p">);</span>
+        <span class="c1">// 设置RunLoop为休眠状态</span>
+        <span class="n">__CFRunLoopSetSleeping</span><span class="p">(</span><span class="n">rl</span><span class="p">);</span>
+        <span class="c1">// do not do any user callouts after this point (after notifying of sleeping)</span>
+
+        <span class="c1">// Must push the local-to-this-activation ports in on every loop</span>
+        <span class="c1">// iteration, as this mode could be run re-entrantly and we don&#39;t</span>
+        <span class="c1">// want these ports to get serviced.</span>
+
+        <span class="n">__CFPortSetInsert</span><span class="p">(</span><span class="n">dispatchPort</span><span class="p">,</span> <span class="n">waitSet</span><span class="p">);</span>
+
+        <span class="n">__CFRunLoopModeUnlock</span><span class="p">(</span><span class="n">rlm</span><span class="p">);</span>
+        <span class="n">__CFRunLoopUnlock</span><span class="p">(</span><span class="n">rl</span><span class="p">);</span>
+
+<span class="cp">#if DEPLOYMENT_TARGET_MACOSX || DEPLOYMENT_TARGET_EMBEDDED || DEPLOYMENT_TARGET_EMBEDDED_MINI</span>
+<span class="cp">#if USE_DISPATCH_SOURCE_FOR_TIMERS</span>
+        <span class="c1">// 这里有个内循环，用于接收等待端口的消息</span>
+        <span class="c1">// 进入此循环后，线程进入休眠，直到收到新消息才跳出该循环，继续执行run loop</span>
+        <span class="k">do</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">kCFUseCollectableAllocator</span><span class="p">)</span> <span class="p">{</span>
+                <span class="n">objc_clear_stack</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+                <span class="c1">// 清空 msg_buffer</span>
+                <span class="n">memset</span><span class="p">(</span><span class="n">msg_buffer</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">msg_buffer</span><span class="p">));</span>
+            <span class="p">}</span>
+            <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="kt">mach_msg_header_t</span> <span class="o">*</span><span class="p">)</span><span class="n">msg_buffer</span><span class="p">;</span>
+            <span class="c1">// 7. 接收waitSet端口的消息</span>
+            <span class="n">__CFRunLoopServiceMachPort</span><span class="p">(</span><span class="n">waitSet</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">msg</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">msg_buffer</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">livePort</span><span class="p">,</span> <span class="n">poll</span> <span class="o">?</span> <span class="mi">0</span> <span class="o">:</span> <span class="n">TIMEOUT_INFINITY</span><span class="p">);</span>
+            <span class="c1">// 收到消息之后，livePort 的值为本地接收消息的活动端口</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">modeQueuePort</span> <span class="o">!=</span> <span class="n">MACH_PORT_NULL</span> <span class="o">&amp;&amp;</span> <span class="n">livePort</span> <span class="o">==</span> <span class="n">modeQueuePort</span><span class="p">)</span> <span class="p">{</span>
+                <span class="c1">// Drain the internal queue. If one of the callout blocks sets the timerFired flag, break out and service the timer.</span>
+                <span class="k">while</span> <span class="p">(</span><span class="n">_dispatch_runloop_root_queue_perform_4CF</span><span class="p">(</span><span class="n">rlm</span><span class="o">-&gt;</span><span class="n">_queue</span><span class="p">));</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">rlm</span><span class="o">-&gt;</span><span class="n">_timerFired</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="c1">// Leave livePort as the queue port, and service timers below</span>
+                    <span class="n">rlm</span><span class="o">-&gt;</span><span class="n">_timerFired</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+                    <span class="k">break</span><span class="p">;</span>
+                <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="n">msg</span> <span class="o">&amp;&amp;</span> <span class="n">msg</span> <span class="o">!=</span> <span class="p">(</span><span class="kt">mach_msg_header_t</span> <span class="o">*</span><span class="p">)</span><span class="n">msg_buffer</span><span class="p">)</span> <span class="n">free</span><span class="p">(</span><span class="n">msg</span><span class="p">);</span>
+                <span class="p">}</span>
+            <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+                <span class="c1">// Go ahead and leave the inner loop.</span>
+                <span class="k">break</span><span class="p">;</span>
+            <span class="p">}</span>
+        <span class="p">}</span> <span class="k">while</span> <span class="p">(</span><span class="mi">1</span><span class="p">);</span>
+<span class="cp">#else</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">kCFUseCollectableAllocator</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">objc_clear_stack</span><span class="p">(</span><span class="mi">0</span><span class="p">);</span>
+            <span class="n">memset</span><span class="p">(</span><span class="n">msg_buffer</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">msg_buffer</span><span class="p">));</span>
+        <span class="p">}</span>
+        <span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="kt">mach_msg_header_t</span> <span class="o">*</span><span class="p">)</span><span class="n">msg_buffer</span><span class="p">;</span>
+        <span class="n">__CFRunLoopServiceMachPort</span><span class="p">(</span><span class="n">waitSet</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">msg</span><span class="p">,</span> <span class="k">sizeof</span><span class="p">(</span><span class="n">msg_buffer</span><span class="p">),</span> <span class="o">&amp;</span><span class="n">livePort</span><span class="p">,</span> <span class="n">poll</span> <span class="o">?</span> <span class="mi">0</span> <span class="o">:</span> <span class="n">TIMEOUT_INFINITY</span><span class="p">);</span>
+<span class="cp">#endif</span>
+
+
+<span class="cp">#elif DEPLOYMENT_TARGET_WINDOWS</span>
+        <span class="c1">// Here, use the app-supplied message queue mask. They will set this if they are interested in having this run loop receive windows messages.</span>
+        <span class="n">__CFRunLoopWaitForMultipleObjects</span><span class="p">(</span><span class="n">waitSet</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="n">poll</span> <span class="o">?</span> <span class="mi">0</span> <span class="o">:</span> <span class="n">TIMEOUT_INFINITY</span><span class="p">,</span> <span class="n">rlm</span><span class="o">-&gt;</span><span class="n">_msgQMask</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">livePort</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">windowsMessageReceived</span><span class="p">);</span>
+<span class="cp">#endif</span>
+
+        <span class="n">__CFRunLoopLock</span><span class="p">(</span><span class="n">rl</span><span class="p">);</span>
+        <span class="n">__CFRunLoopModeLock</span><span class="p">(</span><span class="n">rlm</span><span class="p">);</span>
+
+        <span class="c1">// Must remove the local-to-this-activation ports in on every loop</span>
+        <span class="c1">// iteration, as this mode could be run re-entrantly and we don&#39;t</span>
+        <span class="c1">// want these ports to get serviced. Also, we don&#39;t want them left</span>
+        <span class="c1">// in there if this function returns.</span>
+
+        <span class="n">__CFPortSetRemove</span><span class="p">(</span><span class="n">dispatchPort</span><span class="p">,</span> <span class="n">waitSet</span><span class="p">);</span>
+        <span class="c1">// 设置 runloop 不可被唤醒</span>
+        <span class="n">__CFRunLoopSetIgnoreWakeUps</span><span class="p">(</span><span class="n">rl</span><span class="p">);</span>
+
+        <span class="c1">// user callouts now OK again</span>
+        <span class="c1">//  取消runloop的休眠状态</span>
+        <span class="n">__CFRunLoopUnsetSleeping</span><span class="p">(</span><span class="n">rl</span><span class="p">);</span>
+        <span class="c1">// 8. 通知观察者runloop被唤醒</span>
+        <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">poll</span> <span class="o">&amp;&amp;</span> <span class="p">(</span><span class="n">rlm</span><span class="o">-&gt;</span><span class="n">_observerMask</span> <span class="o">&amp;</span> <span class="n">kCFRunLoopAfterWaiting</span><span class="p">))</span> <span class="n">__CFRunLoopDoObservers</span><span class="p">(</span><span class="n">rl</span><span class="p">,</span> <span class="n">rlm</span><span class="p">,</span> <span class="n">kCFRunLoopAfterWaiting</span><span class="p">);</span>
+
+        <span class="c1">// 9. 处理通过端口收到的消息</span>
+        <span class="nl">handle_msg:</span><span class="p">;</span>
+        <span class="c1">// 设置 runloop 不可被唤醒</span>
+        <span class="n">__CFRunLoopSetIgnoreWakeUps</span><span class="p">(</span><span class="n">rl</span><span class="p">);</span>
+
+<span class="cp">#if DEPLOYMENT_TARGET_WINDOWS</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">windowsMessageReceived</span><span class="p">)</span> <span class="p">{</span>
+            <span class="c1">// These Win32 APIs cause a callout, so make sure we&#39;re unlocked first and relocked after</span>
+            <span class="n">__CFRunLoopModeUnlock</span><span class="p">(</span><span class="n">rlm</span><span class="p">);</span>
+            <span class="n">__CFRunLoopUnlock</span><span class="p">(</span><span class="n">rl</span><span class="p">);</span>
+
+            <span class="k">if</span> <span class="p">(</span><span class="n">rlm</span><span class="o">-&gt;</span><span class="n">_msgPump</span><span class="p">)</span> <span class="p">{</span>
+                <span class="n">rlm</span><span class="o">-&gt;</span><span class="n">_msgPump</span><span class="p">();</span>
+            <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+                <span class="n">MSG</span> <span class="n">msg</span><span class="p">;</span>
+                <span class="k">if</span> <span class="p">(</span><span class="n">PeekMessage</span><span class="p">(</span><span class="o">&amp;</span><span class="n">msg</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">PM_REMOVE</span> <span class="o">|</span> <span class="n">PM_NOYIELD</span><span class="p">))</span> <span class="p">{</span>
+                    <span class="n">TranslateMessage</span><span class="p">(</span><span class="o">&amp;</span><span class="n">msg</span><span class="p">);</span>
+                    <span class="n">DispatchMessage</span><span class="p">(</span><span class="o">&amp;</span><span class="n">msg</span><span class="p">);</span>
+                <span class="p">}</span>
+            <span class="p">}</span>
+
+            <span class="n">__CFRunLoopLock</span><span class="p">(</span><span class="n">rl</span><span class="p">);</span>
+            <span class="n">__CFRunLoopModeLock</span><span class="p">(</span><span class="n">rlm</span><span class="p">);</span>
+            <span class="n">sourceHandledThisLoop</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+
+            <span class="c1">// To prevent starvation of sources other than the message queue, we check again to see if any other sources need to be serviced</span>
+            <span class="c1">// Use 0 for the mask so windows messages are ignored this time. Also use 0 for the timeout, because we&#39;re just checking to see if the things are signalled right now -- we will wait on them again later.</span>
+            <span class="c1">// NOTE: Ignore the dispatch source (it&#39;s not in the wait set anymore) and also don&#39;t run the observers here since we are polling.</span>
+            <span class="n">__CFRunLoopSetSleeping</span><span class="p">(</span><span class="n">rl</span><span class="p">);</span>
+            <span class="n">__CFRunLoopModeUnlock</span><span class="p">(</span><span class="n">rlm</span><span class="p">);</span>
+            <span class="n">__CFRunLoopUnlock</span><span class="p">(</span><span class="n">rl</span><span class="p">);</span>
+
+            <span class="n">__CFRunLoopWaitForMultipleObjects</span><span class="p">(</span><span class="n">waitSet</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">livePort</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+
+            <span class="n">__CFRunLoopLock</span><span class="p">(</span><span class="n">rl</span><span class="p">);</span>
+            <span class="n">__CFRunLoopModeLock</span><span class="p">(</span><span class="n">rlm</span><span class="p">);</span>            
+            <span class="n">__CFRunLoopUnsetSleeping</span><span class="p">(</span><span class="n">rl</span><span class="p">);</span>
+            <span class="c1">// If we have a new live port then it will be handled below as normal</span>
+        <span class="p">}</span>
+<span class="cp">#endif</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">MACH_PORT_NULL</span> <span class="o">==</span> <span class="n">livePort</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">CFRUNLOOP_WAKEUP_FOR_NOTHING</span><span class="p">();</span>
+            <span class="c1">// handle nothing</span>
+        <span class="p">}</span> 
+        <span class="c1">// 通过CFRunloopWake唤醒，</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">livePort</span> <span class="o">==</span> <span class="n">rl</span><span class="o">-&gt;</span><span class="n">_wakeUpPort</span><span class="p">)</span> <span class="p">{</span>
+            <span class="c1">// 什么都不干，跳回2重新循环</span>
+            <span class="n">CFRUNLOOP_WAKEUP_FOR_WAKEUP</span><span class="p">();</span>
+            <span class="c1">// do nothing on Mac OS</span>
+<span class="cp">#if DEPLOYMENT_TARGET_WINDOWS</span>
+            <span class="c1">// Always reset the wake up port, or risk spinning forever</span>
+            <span class="n">ResetEvent</span><span class="p">(</span><span class="n">rl</span><span class="o">-&gt;</span><span class="n">_wakeUpPort</span><span class="p">);</span>
+<span class="cp">#endif</span>
+        <span class="p">}</span>
+<span class="cp">#if USE_DISPATCH_SOURCE_FOR_TIMERS</span>
+        <span class="c1">// 如果是 timer 事件</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">modeQueuePort</span> <span class="o">!=</span> <span class="n">MACH_PORT_NULL</span> <span class="o">&amp;&amp;</span> <span class="n">livePort</span> <span class="o">==</span> <span class="n">modeQueuePort</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">CFRUNLOOP_WAKEUP_FOR_TIMER</span><span class="p">();</span>
+            <span class="c1">// 处理timer事件</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">__CFRunLoopDoTimers</span><span class="p">(</span><span class="n">rl</span><span class="p">,</span> <span class="n">rlm</span><span class="p">,</span> <span class="n">mach_absolute_time</span><span class="p">()))</span> <span class="p">{</span>
+                <span class="c1">// Re-arm the next timer, because we apparently fired early</span>
+                <span class="n">__CFArmNextTimerInMode</span><span class="p">(</span><span class="n">rlm</span><span class="p">,</span> <span class="n">rl</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+<span class="cp">#endif</span>
+<span class="cp">#if USE_MK_TIMER_TOO</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">rlm</span><span class="o">-&gt;</span><span class="n">_timerPort</span> <span class="o">!=</span> <span class="n">MACH_PORT_NULL</span> <span class="o">&amp;&amp;</span> <span class="n">livePort</span> <span class="o">==</span> <span class="n">rlm</span><span class="o">-&gt;</span><span class="n">_timerPort</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">CFRUNLOOP_WAKEUP_FOR_TIMER</span><span class="p">();</span>
+            <span class="c1">// On Windows, we have observed an issue where the timer port is set before the time which we requested it to be set. For example, we set the fire time to be TSR 167646765860, but it is actually observed firing at TSR 167646764145, which is 1715 ticks early. The result is that, when __CFRunLoopDoTimers checks to see if any of the run loop timers should be firing, it appears to be &#39;too early&#39; for the next timer, and no timers are handled.</span>
+            <span class="c1">// In this case, the timer port has been automatically reset (since it was returned from MsgWaitForMultipleObjectsEx), and if we do not re-arm it, then no timers will ever be serviced again unless something adjusts the timer list (e.g. adding or removing timers). The fix for the issue is to reset the timer here if CFRunLoopDoTimers did not handle a timer itself. 9308754</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">__CFRunLoopDoTimers</span><span class="p">(</span><span class="n">rl</span><span class="p">,</span> <span class="n">rlm</span><span class="p">,</span> <span class="n">mach_absolute_time</span><span class="p">()))</span> <span class="p">{</span>
+                <span class="c1">// Re-arm the next timer</span>
+                <span class="n">__CFArmNextTimerInMode</span><span class="p">(</span><span class="n">rlm</span><span class="p">,</span> <span class="n">rl</span><span class="p">);</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+<span class="cp">#endif</span>
+        <span class="c1">// 如果是 dispatch 到 main queue 的 block</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">livePort</span> <span class="o">==</span> <span class="n">dispatchPort</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">CFRUNLOOP_WAKEUP_FOR_DISPATCH</span><span class="p">();</span>
+            <span class="n">__CFRunLoopModeUnlock</span><span class="p">(</span><span class="n">rlm</span><span class="p">);</span>
+            <span class="n">__CFRunLoopUnlock</span><span class="p">(</span><span class="n">rl</span><span class="p">);</span>
+            <span class="n">_CFSetTSD</span><span class="p">(</span><span class="n">__CFTSDKeyIsInGCDMainQ</span><span class="p">,</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span><span class="mi">6</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+<span class="cp">#if DEPLOYMENT_TARGET_WINDOWS</span>
+            <span class="kt">void</span> <span class="o">*</span><span class="n">msg</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span>
+<span class="cp">#endif</span>
+            <span class="c1">// 执行block</span>
+            <span class="n">__CFRUNLOOP_IS_SERVICING_THE_MAIN_DISPATCH_QUEUE__</span><span class="p">(</span><span class="n">msg</span><span class="p">);</span>
+            <span class="n">_CFSetTSD</span><span class="p">(</span><span class="n">__CFTSDKeyIsInGCDMainQ</span><span class="p">,</span> <span class="p">(</span><span class="kt">void</span> <span class="o">*</span><span class="p">)</span><span class="mi">0</span><span class="p">,</span> <span class="nb">NULL</span><span class="p">);</span>
+            <span class="n">__CFRunLoopLock</span><span class="p">(</span><span class="n">rl</span><span class="p">);</span>
+            <span class="n">__CFRunLoopModeLock</span><span class="p">(</span><span class="n">rlm</span><span class="p">);</span>
+            <span class="n">sourceHandledThisLoop</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+            <span class="n">didDispatchPortLastTime</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="c1">// source1 事件 </span>
+        <span class="k">else</span> <span class="p">{</span>
+            <span class="n">CFRUNLOOP_WAKEUP_FOR_SOURCE</span><span class="p">();</span>
+            <span class="c1">// Despite the name, this works for windows handles as well</span>
+            <span class="c1">// 根据接收消息的 port 寻找 source1 事件</span>
+            <span class="n">CFRunLoopSourceRef</span> <span class="n">rls</span> <span class="o">=</span> <span class="n">__CFRunLoopModeFindSourceForMachPort</span><span class="p">(</span><span class="n">rl</span><span class="p">,</span> <span class="n">rlm</span><span class="p">,</span> <span class="n">livePort</span><span class="p">);</span>
+            <span class="c1">// 有 source1 事件待处理</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">rls</span><span class="p">)</span> <span class="p">{</span>
+<span class="cp">#if DEPLOYMENT_TARGET_MACOSX || DEPLOYMENT_TARGET_EMBEDDED || DEPLOYMENT_TARGET_EMBEDDED_MINI</span>
+                <span class="kt">mach_msg_header_t</span> <span class="o">*</span><span class="n">reply</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+                <span class="c1">// 处理 source1 事件</span>
+                <span class="n">sourceHandledThisLoop</span> <span class="o">=</span> <span class="n">__CFRunLoopDoSource1</span><span class="p">(</span><span class="n">rl</span><span class="p">,</span> <span class="n">rlm</span><span class="p">,</span> <span class="n">rls</span><span class="p">,</span> <span class="n">msg</span><span class="p">,</span> <span class="n">msg</span><span class="o">-&gt;</span><span class="n">msgh_size</span><span class="p">,</span> <span class="o">&amp;</span><span class="n">reply</span><span class="p">)</span> <span class="o">||</span> <span class="n">sourceHandledThisLoop</span><span class="p">;</span>
+                <span class="k">if</span> <span class="p">(</span><span class="nb">NULL</span> <span class="o">!=</span> <span class="n">reply</span><span class="p">)</span> <span class="p">{</span>
+                    <span class="p">(</span><span class="kt">void</span><span class="p">)</span><span class="n">mach_msg</span><span class="p">(</span><span class="n">reply</span><span class="p">,</span> <span class="n">MACH_SEND_MSG</span><span class="p">,</span> <span class="n">reply</span><span class="o">-&gt;</span><span class="n">msgh_size</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">MACH_PORT_NULL</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="n">MACH_PORT_NULL</span><span class="p">);</span>
+                    <span class="n">CFAllocatorDeallocate</span><span class="p">(</span><span class="n">kCFAllocatorSystemDefault</span><span class="p">,</span> <span class="n">reply</span><span class="p">);</span>
+                <span class="p">}</span>
+<span class="cp">#elif DEPLOYMENT_TARGET_WINDOWS</span>
+                <span class="n">sourceHandledThisLoop</span> <span class="o">=</span> <span class="n">__CFRunLoopDoSource1</span><span class="p">(</span><span class="n">rl</span><span class="p">,</span> <span class="n">rlm</span><span class="p">,</span> <span class="n">rls</span><span class="p">)</span> <span class="o">||</span> <span class="n">sourceHandledThisLoop</span><span class="p">;</span>
+<span class="cp">#endif</span>
+            <span class="p">}</span>
+        <span class="p">}</span> 
+<span class="cp">#if DEPLOYMENT_TARGET_MACOSX || DEPLOYMENT_TARGET_EMBEDDED || DEPLOYMENT_TARGET_EMBEDDED_MINI</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">msg</span> <span class="o">&amp;&amp;</span> <span class="n">msg</span> <span class="o">!=</span> <span class="p">(</span><span class="kt">mach_msg_header_t</span> <span class="o">*</span><span class="p">)</span><span class="n">msg_buffer</span><span class="p">)</span> <span class="n">free</span><span class="p">(</span><span class="n">msg</span><span class="p">);</span>
+<span class="cp">#endif</span>
+
+        <span class="n">__CFRunLoopDoBlocks</span><span class="p">(</span><span class="n">rl</span><span class="p">,</span> <span class="n">rlm</span><span class="p">);</span>
+
+        <span class="c1">// 处理完当前事件 &amp; runloop 执行完就退出</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">sourceHandledThisLoop</span> <span class="o">&amp;&amp;</span> <span class="n">stopAfterHandle</span><span class="p">)</span> <span class="p">{</span>
+            <span class="n">retVal</span> <span class="o">=</span> <span class="n">kCFRunLoopRunHandledSource</span><span class="p">;</span>
+        <span class="p">}</span> 
+        <span class="c1">// run loop超时</span>
+        <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">timeout_context</span><span class="o">-&gt;</span><span class="n">termTSR</span> <span class="o">&lt;</span> <span class="n">mach_absolute_time</span><span class="p">())</span> <span class="p">{</span>
+            <span class="n">retVal</span> <span class="o">=</span> <span class="n">kCFRunLoopRunTimedOut</span><span class="p">;</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">__CFRunLoopIsStopped</span><span class="p">(</span><span class="n">rl</span><span class="p">))</span> <span class="p">{</span>
+            <span class="c1">// run loop被手动终止</span>
+            <span class="n">__CFRunLoopUnsetStopped</span><span class="p">(</span><span class="n">rl</span><span class="p">);</span>
+            <span class="n">retVal</span> <span class="o">=</span> <span class="n">kCFRunLoopRunStopped</span><span class="p">;</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">rlm</span><span class="o">-&gt;</span><span class="n">_stopped</span><span class="p">)</span> <span class="p">{</span>
+            <span class="c1">// mode被终止</span>
+            <span class="n">rlm</span><span class="o">-&gt;</span><span class="n">_stopped</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+            <span class="n">retVal</span> <span class="o">=</span> <span class="n">kCFRunLoopRunStopped</span><span class="p">;</span>
+        <span class="p">}</span> <span class="k">else</span> <span class="k">if</span> <span class="p">(</span><span class="n">__CFRunLoopModeIsEmpty</span><span class="p">(</span><span class="n">rl</span><span class="p">,</span> <span class="n">rlm</span><span class="p">,</span> <span class="n">previousMode</span><span class="p">))</span> <span class="p">{</span>
+            <span class="c1">// mode中没有要处理的事件</span>
+            <span class="n">retVal</span> <span class="o">=</span> <span class="n">kCFRunLoopRunFinished</span><span class="p">;</span>
+        <span class="p">}</span>
+    <span class="p">}</span> <span class="k">while</span> <span class="p">(</span><span class="mi">0</span> <span class="o">==</span> <span class="n">retVal</span><span class="p">);</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="n">timeout_timer</span><span class="p">)</span> <span class="p">{</span>
+        <span class="n">dispatch_source_cancel</span><span class="p">(</span><span class="n">timeout_timer</span><span class="p">);</span>
+        <span class="n">dispatch_release</span><span class="p">(</span><span class="n">timeout_timer</span><span class="p">);</span>
+    <span class="p">}</span> <span class="k">else</span> <span class="p">{</span>
+        <span class="n">free</span><span class="p">(</span><span class="n">timeout_context</span><span class="p">);</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">retVal</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h2 id="cfrunlooprunspecificc">CFRunLoopRunSpecific.c</h2>
+<div class="hlcode"><pre><span class="cm">/*</span>
+<span class="cm"> * 指定mode运行runloop</span>
+<span class="cm"> * @param rl 当前运行的runloop</span>
+<span class="cm"> * @param modeName 需要运行的mode的name</span>
+<span class="cm"> * @param seconds  runloop的超时时间</span>
+<span class="cm"> * @param returnAfterSourceHandled 是否处理完事件就返回</span>
+<span class="cm"> */</span>
+<span class="n">SInt32</span> <span class="nf">CFRunLoopRunSpecific</span><span class="p">(</span><span class="n">CFRunLoopRef</span> <span class="n">rl</span><span class="p">,</span> <span class="n">CFStringRef</span> <span class="n">modeName</span><span class="p">,</span> <span class="n">CFTimeInterval</span> <span class="n">seconds</span><span class="p">,</span> <span class="n">Boolean</span> <span class="n">returnAfterSourceHandled</span><span class="p">)</span> <span class="p">{</span>     <span class="cm">/* DOES CALLOUT */</span>
+    <span class="n">CHECK_FOR_FORK</span><span class="p">();</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">__CFRunLoopIsDeallocating</span><span class="p">(</span><span class="n">rl</span><span class="p">))</span> <span class="k">return</span> <span class="n">kCFRunLoopRunFinished</span><span class="p">;</span>
+    <span class="n">__CFRunLoopLock</span><span class="p">(</span><span class="n">rl</span><span class="p">);</span>
+    <span class="c1">//根据modeName找到本次运行的mode</span>
+    <span class="n">CFRunLoopModeRef</span> <span class="n">currentMode</span> <span class="o">=</span> <span class="n">__CFRunLoopFindMode</span><span class="p">(</span><span class="n">rl</span><span class="p">,</span> <span class="n">modeName</span><span class="p">,</span> <span class="nb">false</span><span class="p">);</span>
+    <span class="c1">//如果没找到 || mode中没有注册任何事件，则就此停止，不进入循环</span>
+    <span class="k">if</span> <span class="p">(</span><span class="nb">NULL</span> <span class="o">==</span> <span class="n">currentMode</span> <span class="o">||</span> <span class="n">__CFRunLoopModeIsEmpty</span><span class="p">(</span><span class="n">rl</span><span class="p">,</span> <span class="n">currentMode</span><span class="p">,</span> <span class="n">rl</span><span class="o">-&gt;</span><span class="n">_currentMode</span><span class="p">))</span> <span class="p">{</span>
+    <span class="n">Boolean</span> <span class="n">did</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">currentMode</span><span class="p">)</span> <span class="n">__CFRunLoopModeUnlock</span><span class="p">(</span><span class="n">currentMode</span><span class="p">);</span>
+    <span class="n">__CFRunLoopUnlock</span><span class="p">(</span><span class="n">rl</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">did</span> <span class="o">?</span> <span class="n">kCFRunLoopRunHandledSource</span> <span class="o">:</span> <span class="n">kCFRunLoopRunFinished</span><span class="p">;</span>
+    <span class="p">}</span>
+    <span class="k">volatile</span> <span class="n">_per_run_data</span> <span class="o">*</span><span class="n">previousPerRun</span> <span class="o">=</span> <span class="n">__CFRunLoopPushPerRunData</span><span class="p">(</span><span class="n">rl</span><span class="p">);</span>
+    <span class="c1">//取上一次运行的mode</span>
+    <span class="n">CFRunLoopModeRef</span> <span class="n">previousMode</span> <span class="o">=</span> <span class="n">rl</span><span class="o">-&gt;</span><span class="n">_currentMode</span><span class="p">;</span>
+    <span class="c1">// 切换 runkloop 当前 mode</span>
+    <span class="n">rl</span><span class="o">-&gt;</span><span class="n">_currentMode</span> <span class="o">=</span> <span class="n">currentMode</span><span class="p">;</span>
+    <span class="kt">int32_t</span> <span class="n">result</span> <span class="o">=</span> <span class="n">kCFRunLoopRunFinished</span><span class="p">;</span>
+
+    <span class="c1">// 1. 通知observer即将进入runloop</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">currentMode</span><span class="o">-&gt;</span><span class="n">_observerMask</span> <span class="o">&amp;</span> <span class="n">kCFRunLoopEntry</span> <span class="p">)</span> <span class="n">__CFRunLoopDoObservers</span><span class="p">(</span><span class="n">rl</span><span class="p">,</span> <span class="n">currentMode</span><span class="p">,</span> <span class="n">kCFRunLoopEntry</span><span class="p">);</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">__CFRunLoopRun</span><span class="p">(</span><span class="n">rl</span><span class="p">,</span> <span class="n">currentMode</span><span class="p">,</span> <span class="n">seconds</span><span class="p">,</span> <span class="n">returnAfterSourceHandled</span><span class="p">,</span> <span class="n">previousMode</span><span class="p">);</span>
+    <span class="c1">// 10. 通知observer已退出runloop</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">currentMode</span><span class="o">-&gt;</span><span class="n">_observerMask</span> <span class="o">&amp;</span> <span class="n">kCFRunLoopExit</span> <span class="p">)</span> <span class="n">__CFRunLoopDoObservers</span><span class="p">(</span><span class="n">rl</span><span class="p">,</span> <span class="n">currentMode</span><span class="p">,</span> <span class="n">kCFRunLoopExit</span><span class="p">);</span>
+
+        <span class="n">__CFRunLoopModeUnlock</span><span class="p">(</span><span class="n">currentMode</span><span class="p">);</span>
+        <span class="n">__CFRunLoopPopPerRunData</span><span class="p">(</span><span class="n">rl</span><span class="p">,</span> <span class="n">previousPerRun</span><span class="p">);</span>
+    <span class="c1">// 执行完成之后把复位 mode</span>
+    <span class="n">rl</span><span class="o">-&gt;</span><span class="n">_currentMode</span> <span class="o">=</span> <span class="n">previousMode</span><span class="p">;</span>
+    <span class="n">__CFRunLoopUnlock</span><span class="p">(</span><span class="n">rl</span><span class="p">);</span>
+    <span class="k">return</span> <span class="n">result</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h2 id="cfrunloopservicemachportc">CFRunLoopServiceMachPort.c</h2>
+<div class="hlcode"><pre><span class="cm">/**</span>
+<span class="cm"> *  接收指定内核端口的消息</span>
+<span class="cm"> *</span>
+<span class="cm"> *  @param port        接收消息的端口</span>
+<span class="cm"> *  @param buffer      消息缓冲区</span>
+<span class="cm"> *  @param buffer_size 消息缓冲区大小</span>
+<span class="cm"> *  @param livePort    暂且理解为活动的端口，接收消息成功时候值为msg-&gt;msgh_local_port，超时时为MACH_PORT_NULL</span>
+<span class="cm"> *  @param timeout     超时时间，单位是ms，如果超时，则RunLoop进入休眠状态</span>
+<span class="cm"> *</span>
+<span class="cm"> *  @return 接收消息成功时返回true 其他情况返回false</span>
+<span class="cm"> */</span>
+<span class="k">static</span> <span class="n">Boolean</span> <span class="nf">__CFRunLoopServiceMachPort</span><span class="p">(</span><span class="kt">mach_port_name_t</span> <span class="n">port</span><span class="p">,</span> <span class="kt">mach_msg_header_t</span> <span class="o">**</span><span class="n">buffer</span><span class="p">,</span> <span class="kt">size_t</span> <span class="n">buffer_size</span><span class="p">,</span> <span class="kt">mach_port_t</span> <span class="o">*</span><span class="n">livePort</span><span class="p">,</span> <span class="kt">mach_msg_timeout_t</span> <span class="n">timeout</span><span class="p">)</span> <span class="p">{</span>
+    <span class="n">Boolean</span> <span class="n">originalBuffer</span> <span class="o">=</span> <span class="nb">true</span><span class="p">;</span>
+    <span class="kt">kern_return_t</span> <span class="n">ret</span> <span class="o">=</span> <span class="n">KERN_SUCCESS</span><span class="p">;</span>
+    <span class="k">for</span> <span class="p">(;;)</span> <span class="p">{</span>      <span class="cm">/* In that sleep of death what nightmares may come ... */</span>
+        <span class="kt">mach_msg_header_t</span> <span class="o">*</span><span class="n">msg</span> <span class="o">=</span> <span class="p">(</span><span class="kt">mach_msg_header_t</span> <span class="o">*</span><span class="p">)</span><span class="o">*</span><span class="n">buffer</span><span class="p">;</span>
+        <span class="n">msg</span><span class="o">-&gt;</span><span class="n">msgh_bits</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span><span class="c1">// 消息头的标志位</span>
+        <span class="n">msg</span><span class="o">-&gt;</span><span class="n">msgh_local_port</span> <span class="o">=</span> <span class="n">port</span><span class="p">;</span><span class="c1">// 本地消息端口</span>
+        <span class="n">msg</span><span class="o">-&gt;</span><span class="n">msgh_remote_port</span> <span class="o">=</span> <span class="n">MACH_PORT_NULL</span><span class="p">;</span><span class="c1">// 目标消息端口</span>
+        <span class="n">msg</span><span class="o">-&gt;</span><span class="n">msgh_size</span> <span class="o">=</span> <span class="n">buffer_size</span><span class="p">;</span><span class="c1">// 消息缓冲区大小</span>
+        <span class="n">msg</span><span class="o">-&gt;</span><span class="n">msgh_id</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span><span class="c1">// msg id</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">TIMEOUT_INFINITY</span> <span class="o">==</span> <span class="n">timeout</span><span class="p">)</span> <span class="p">{</span> <span class="n">CFRUNLOOP_SLEEP</span><span class="p">();</span> <span class="p">}</span> <span class="k">else</span> <span class="p">{</span> <span class="n">CFRUNLOOP_POLL</span><span class="p">();</span> <span class="p">}</span>
+        <span class="c1">// 系统底层处理消息的机制</span>
+        <span class="n">ret</span> <span class="o">=</span> <span class="n">mach_msg</span><span class="p">(</span> <span class="n">msg</span><span class="p">,</span> 
+                        <span class="n">MACH_RCV_MSG</span><span class="o">|</span><span class="n">MACH_RCV_LARGE</span><span class="o">|</span><span class="p">((</span><span class="n">TIMEOUT_INFINITY</span> <span class="o">!=</span> <span class="n">timeout</span><span class="p">)</span> <span class="o">?</span> <span class="n">MACH_RCV_TIMEOUT</span> <span class="o">:</span> <span class="mi">0</span><span class="p">)</span><span class="o">|</span><span class="n">MACH_RCV_TRAILER_TYPE</span><span class="p">(</span><span class="n">MACH_MSG_TRAILER_FORMAT_0</span><span class="p">)</span><span class="o">|</span><span class="n">MACH_RCV_TRAILER_ELEMENTS</span><span class="p">(</span><span class="n">MACH_RCV_TRAILER_AV</span><span class="p">),</span> 
+                        <span class="mi">0</span><span class="p">,</span> 
+                        <span class="n">msg</span><span class="o">-&gt;</span><span class="n">msgh_size</span><span class="p">,</span> 
+                        <span class="n">port</span><span class="p">,</span> 
+                        <span class="n">timeout</span><span class="p">,</span> 
+                        <span class="n">MACH_PORT_NULL</span><span class="p">);</span>
+        <span class="n">CFRUNLOOP_WAKEUP</span><span class="p">(</span><span class="n">ret</span><span class="p">);</span>
+        <span class="c1">// 接收/发送消息成功，给 livePort 赋值为 msgh_local_port</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">MACH_MSG_SUCCESS</span> <span class="o">==</span> <span class="n">ret</span><span class="p">)</span> <span class="p">{</span>
+            <span class="o">*</span><span class="n">livePort</span> <span class="o">=</span> <span class="n">msg</span> <span class="o">?</span> <span class="n">msg</span><span class="o">-&gt;</span><span class="n">msgh_local_port</span> <span class="o">:</span> <span class="n">MACH_PORT_NULL</span><span class="p">;</span>
+            <span class="k">return</span> <span class="nb">true</span><span class="p">;</span>
+        <span class="p">}</span>
+        <span class="c1">// 接收消息超时</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">MACH_RCV_TIMED_OUT</span> <span class="o">==</span> <span class="n">ret</span><span class="p">)</span> <span class="p">{</span>
+            <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">originalBuffer</span><span class="p">)</span> <span class="n">free</span><span class="p">(</span><span class="n">msg</span><span class="p">);</span>
+            <span class="o">*</span><span class="n">buffer</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+            <span class="o">*</span><span class="n">livePort</span> <span class="o">=</span> <span class="n">MACH_PORT_NULL</span><span class="p">;</span>
+            <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+        <span class="p">}</span>
+
+        <span class="k">if</span> <span class="p">(</span><span class="n">MACH_RCV_TOO_LARGE</span> <span class="o">!=</span> <span class="n">ret</span><span class="p">)</span> <span class="k">break</span><span class="p">;</span>
+        <span class="c1">// 消息体过大，分配更多的内存</span>
+        <span class="n">buffer_size</span> <span class="o">=</span> <span class="n">round_msg</span><span class="p">(</span><span class="n">msg</span><span class="o">-&gt;</span><span class="n">msgh_size</span> <span class="o">+</span> <span class="n">MAX_TRAILER_SIZE</span><span class="p">);</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">originalBuffer</span><span class="p">)</span> <span class="o">*</span><span class="n">buffer</span> <span class="o">=</span> <span class="nb">NULL</span><span class="p">;</span>
+        <span class="n">originalBuffer</span> <span class="o">=</span> <span class="nb">false</span><span class="p">;</span>
+        <span class="o">*</span><span class="n">buffer</span> <span class="o">=</span> <span class="n">realloc</span><span class="p">(</span><span class="o">*</span><span class="n">buffer</span><span class="p">,</span> <span class="n">buffer_size</span><span class="p">);</span>
+    <span class="p">}</span>
+    <span class="n">HALT</span><span class="p">;</span>
+    <span class="k">return</span> <span class="nb">false</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+    </div>
+
+        </div>
+        <div id="footer">
+            <span>
+                Copyright © 2017 <a href="http://honglu.me" target="_blank">独奏</a>.
+                Powered by <a href="http://simiki.org/" target="_blank">Simiki</a>.
+            </span>
+        </div>
+        
+    </body>
+</html>
