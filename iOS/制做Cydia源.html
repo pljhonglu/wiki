@@ -1,0 +1,91 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel="Stylesheet" type="text/css" href="/static/css/style.css">
+        <link rel="Stylesheet" type="text/css" href="/static/css/tango.css">
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+        <link rel="icon" href="/favicon.ico" type="image/x-icon">
+        <title>搭建 Cydia 源 - 独奏's Wiki</title>
+        <meta name="keywords" content="Wiki, 独奏, 鸿禄"/>
+        <meta name="description" content="独奏的个人 Wiki，独奏的 Blog 地址：http://homglu.me。"/>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body>
+        <div id="container">
+            
+    <div id="header">
+        <div id="post-nav">
+            
+            <a href="/">Home</a> » <a href="/#iOS">iOS</a> » 搭建 Cydia 源
+            
+        </div>
+    </div>
+    <div class="clearfix"></div>
+    <div id="title">搭建 Cydia 源</div>
+    <div id="content">
+        <div class="toc"><span class="toctitle">Table of Contents</span><ul>
+<li><a href="#_1">目录结构</a></li>
+<li><a href="#packages">制作 Packages</a></li>
+<li><a href="#release">制作 Release</a></li>
+<li><a href="#_2">说明</a></li>
+<li><a href="#_3">参考</a></li>
+</ul>
+</div>
+<p>CentOS系统，安装 nginx</p>
+<h2 id="_1">目录结构</h2>
+<div class="hlcode"><pre><span class="n">www</span><span class="o">/</span>
+ <span class="n">Cydia</span><span class="o">/</span>
+  <span class="n">Release</span>
+  <span class="n">Packages</span>
+  <span class="n">Packages</span><span class="p">.</span><span class="n">gz</span>
+  <span class="n">Packages</span><span class="p">.</span><span class="n">bz2</span>
+  <span class="n">CydiaIcon</span><span class="p">.</span><span class="n">png</span>
+  <span class="n">debs</span><span class="o">/</span>
+   <span class="n">xxxx1</span><span class="p">.</span><span class="n">deb</span>
+   <span class="n">xxxx2</span><span class="p">.</span><span class="n">deb</span>
+</pre></div>
+
+
+<h2 id="packages">制作 Packages</h2>
+<p>生成好的 deb 包放到 <code>www/Cydia/debs/</code> 目录下，执行命令：</p>
+<div class="hlcode"><pre><span class="n">dpkg</span><span class="o">-</span><span class="n">scanpackages</span> <span class="n">debs</span> <span class="o">/</span><span class="n">dev</span><span class="o">/</span><span class="n">null</span> <span class="o">&gt;</span> <span class="n">Packages</span>
+<span class="n">tar</span> <span class="n">zcvf</span> <span class="n">Packages</span><span class="p">.</span><span class="n">gz</span> <span class="n">Packages</span>
+<span class="n">bzip2</span> <span class="o">-</span><span class="n">k</span> <span class="n">Packages</span> <span class="n">Packages</span><span class="p">.</span><span class="n">bz2</span>
+</pre></div>
+
+
+<p>这样 Package 、Packages.bz2、Package.gz就有了</p>
+<h2 id="release">制作 Release</h2>
+<p>Release 文件内容：</p>
+<div class="hlcode"><pre><span class="n">Origin</span><span class="o">:</span> <span class="n">Cydia</span><span class="o">/</span><span class="n">NetEase</span>
+<span class="n">Label</span><span class="o">:</span> <span class="n">Cydia</span><span class="o">/</span><span class="n">NetEase</span>
+<span class="n">Suite</span><span class="o">:</span> <span class="n">stable</span>
+<span class="n">Version</span><span class="o">:</span> <span class="mf">1.0</span>
+<span class="n">Codename</span><span class="o">:</span> <span class="n">netease</span>
+<span class="n">Architectures</span><span class="o">:</span> <span class="n">iphoneos</span><span class="o">-</span><span class="n">arm</span>
+<span class="n">Components</span><span class="o">:</span> <span class="n">main</span>
+<span class="n">Description</span><span class="o">:</span> <span class="n">Distribution</span> <span class="n">of</span> <span class="n">Unix</span> <span class="n">Software</span> <span class="k">for</span> <span class="n">iOS</span>
+</pre></div>
+
+
+<h2 id="_2">说明</h2>
+<p>如果不签名，那么就不需要 <code>md5sum</code> 相关的信息</p>
+<h2 id="_3">参考</h2>
+<ul>
+<li><a href="http://blog.sina.com.cn/s/blog_9a2a9f370100yfij.html">在局域网搭建自己的Cydia源</a></li>
+<li><a href="http://bbs.feng.com/read-htm-tid-669283.html">从零开始搭建Cydia软件源+制作deb安装包</a></li>
+<li><a href="https://undefinedblog.com/cydiayuan-da-jian-wei-hu-geng-xin/">Cydia源搭建、维护、更新 deb文件编辑方法</a></li>
+</ul>
+    </div>
+
+        </div>
+        <div id="footer">
+            <span>
+                Copyright © 2017 <a href="http://honglu.me" target="_blank">独奏</a>.
+                Powered by <a href="http://simiki.org/" target="_blank">Simiki</a>.
+            </span>
+        </div>
+        
+    </body>
+</html>

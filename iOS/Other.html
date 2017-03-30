@@ -26,11 +26,21 @@
     <div id="content">
         <div class="toc"><span class="toctitle">Table of Contents</span><ul>
 <li><a href="#_1">收键盘</a></li>
+<li><a href="#_2">缓存</a></li>
 </ul>
 </div>
 <h2 id="_1">收键盘</h2>
 <div class="hlcode"><pre><span class="p">[</span><span class="n">self</span><span class="p">.</span><span class="n">view</span> <span class="n">endEditing</span><span class="o">:</span><span class="n">YES</span><span class="p">];</span>
 </pre></div>
+
+
+<h2 id="_2">缓存</h2>
+<div class="hlcode"><pre><span class="n">NSURLCache</span> <span class="o">*</span><span class="n">urlCache</span> <span class="o">=</span> <span class="p">[[</span><span class="n">NSURLCache</span> <span class="n">alloc</span><span class="p">]</span> <span class="n">initWithMemoryCapacity</span><span class="o">:</span><span class="mi">4</span> <span class="o">*</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span> <span class="n">diskCapacity</span><span class="o">:</span><span class="mi">20</span> <span class="o">*</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span> <span class="n">diskPath</span><span class="o">:</span><span class="nb">nil</span><span class="p">];</span>
+<span class="p">[</span><span class="n">NSURLCache</span> <span class="n">setSharedURLCache</span><span class="o">:</span><span class="n">urlCache</span><span class="p">];</span>
+</pre></div>
+
+
+<p><a href="https://github.com/ChenYilong/ParseSourceCodeStudy/blob/master/02_Parse%E7%9A%84%E7%BD%91%E7%BB%9C%E7%BC%93%E5%AD%98%E4%B8%8E%E7%A6%BB%E7%BA%BF%E5%AD%98%E5%82%A8/iOS%E7%BD%91%E7%BB%9C%E7%BC%93%E5%AD%98%E6%89%AB%E7%9B%B2%E7%AF%87.md">iOS网络缓存扫盲篇</a></p>
     </div>
 
         </div>
