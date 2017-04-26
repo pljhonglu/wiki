@@ -27,6 +27,7 @@
         <div class="toc"><span class="toctitle">Table of Contents</span><ul>
 <li><a href="#ip">IP + 子网掩码 表示法</a></li>
 <li><a href="#_1">路由表</a></li>
+<li><a href="#_2">重启网络服务</a></li>
 </ul>
 </div>
 <h2 id="ip">IP + 子网掩码 表示法</h2>
@@ -39,6 +40,16 @@
 <li><a href="http://www.cnblogs.com/gunl/archive/2010/09/14/1826234.html">linux 路由表 的一些相关资料</a></li>
 <li><a href="http://www.voidcn.com/blog/chenlycly/article/p-6144880.html">Linux双网卡不能上网</a></li>
 </ul>
+<h2 id="_2">重启网络服务</h2>
+<div class="hlcode"><pre><span class="n">systemctl</span> <span class="n">restart</span> <span class="n">network</span><span class="p">.</span><span class="n">service</span>
+<span class="n">systemctl</span> <span class="n">status</span> <span class="n">network</span><span class="p">.</span><span class="n">service</span>
+</pre></div>
+
+
+<p>如果有 <code>NetworkManager</code> 进程，关闭它：</p>
+<div class="hlcode"><pre><span class="n">systemctl</span> <span class="n">NetworkManager</span> <span class="n">network</span><span class="p">.</span><span class="n">service</span>
+<span class="n">ps</span> <span class="n">aux</span> <span class="o">|</span> <span class="n">grep</span> <span class="n">NetworkManager</span>
+</pre></div>
     </div>
 
         </div>

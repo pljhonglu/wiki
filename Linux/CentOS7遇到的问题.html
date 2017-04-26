@@ -1,0 +1,61 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel="Stylesheet" type="text/css" href="/static/css/style.css">
+        <link rel="Stylesheet" type="text/css" href="/static/css/tango.css">
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+        <link rel="icon" href="/favicon.ico" type="image/x-icon">
+        <title>CentOS 7遇到的问题 - 独奏's Wiki</title>
+        <meta name="keywords" content="Wiki, 独奏, 鸿禄"/>
+        <meta name="description" content="独奏的个人 Wiki，独奏的 Blog 地址：http://homglu.me。"/>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body>
+        <div id="container">
+            
+    <div id="header">
+        <div id="post-nav">
+            
+            <a href="/">Home</a> » <a href="/#Linux">Linux</a> » CentOS 7遇到的问题
+            
+        </div>
+    </div>
+    <div class="clearfix"></div>
+    <div id="title">CentOS 7遇到的问题</div>
+    <div id="content">
+        <div class="toc"><span class="toctitle">Table of Contents</span><ul>
+<li><a href="#_1">关闭防火墙</a></li>
+<li><a href="#selinux">关闭 selinux</a></li>
+</ul>
+</div>
+<h2 id="_1">关闭防火墙</h2>
+<div class="hlcode"><pre><span class="n">systemctl</span> <span class="n">stop</span> <span class="n">firewalld</span>
+</pre></div>
+
+
+<h2 id="selinux">关闭 selinux</h2>
+<p>遇到一个坑，selinux 开启状态导致 nginx 无法访问目录，即使 nginx 有目录权限也不行。后来找到原因是 selinux 的锅。可以通过下面方法关闭 selinux。</p>
+<p>查看 selinux 状态</p>
+<div class="hlcode"><pre><span class="c"># 查看 selinux 状态</span>
+selinuxenabled <span class="o">&amp;&amp;</span> <span class="nb">echo </span>enabled <span class="o">||</span> <span class="nb">echo </span>disabled
+
+<span class="c"># 关闭 selinux</span>
+nano /etc/sysconfig/selinux
+<span class="nv">SELINUX</span><span class="o">=</span>disabled
+
+<span class="c"># 重启</span>
+reboot
+</pre></div>
+    </div>
+
+        </div>
+        <div id="footer">
+            <span>
+                Copyright © 2017 <a href="http://honglu.me" target="_blank">独奏</a>.
+                Powered by <a href="http://simiki.org/" target="_blank">Simiki</a>.
+            </span>
+        </div>
+        
+    </body>
+</html>
