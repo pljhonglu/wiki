@@ -1,0 +1,85 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel="Stylesheet" type="text/css" href="/static/css/style.css">
+        <link rel="Stylesheet" type="text/css" href="/static/css/tango.css">
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+        <link rel="icon" href="/favicon.ico" type="image/x-icon">
+        <title>后台运行 - 独奏's Wiki</title>
+        <meta name="keywords" content="Wiki, 独奏, 鸿禄"/>
+        <meta name="description" content="独奏的个人 Wiki，独奏的 Blog 地址：http://homglu.me。"/>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body>
+        <div id="container">
+            
+    <div id="header">
+        <div id="post-nav">
+            
+            <a href="/">Home</a> » <a href="/#Linux">Linux</a> » 后台运行
+            
+        </div>
+    </div>
+    <div class="clearfix"></div>
+    <div id="title">后台运行</div>
+    <div id="content">
+        <div class="toc"><span class="toctitle">Table of Contents</span><ul>
+<li><a href="#nohup">nohup</a></li>
+<li><a href="#_1">&amp;</a></li>
+<li><a href="#nodejs-forever">nodejs forever</a></li>
+</ul>
+</div>
+<h2 id="nohup">nohup</h2>
+<div class="hlcode"><pre><span class="c"># 标准输出和标准错误缺省会被重定向到 nohup.out 文件中</span>
+nohup conmmand &amp;
+<span class="c"># 指定重定向文件名</span>
+nohup <span class="nb">command</span> &gt; myout.file 2&gt;&amp;1 &amp;
+</pre></div>
+
+
+<p>查看后台任务</p>
+<ul>
+<li><code>jobs</code> 显示后台运行的任务, 显示的列表中第一个为任务 id</li>
+<li><code>fg N</code> 命令将后台任务切换到前台, N 为任务 id</li>
+</ul>
+<p>参考：</p>
+<p><a href="http://www.williamlong.info/archives/482.html">使用nohup让程序在远程主机后台运行</a></p>
+<h2 id="_1">&amp;</h2>
+<div class="hlcode"><pre><span class="nb">command</span> &gt; /dev/null 2&gt;&amp;1 &amp;
+</pre></div>
+
+
+<ul>
+<li>2&gt;&amp;1，将标准错误重定向到标准输出</li>
+<li>最后一个 &amp; 让该命令在后台执行</li>
+</ul>
+<p>参考：</p>
+<p><a href="http://blog.csdn.net/ithomer/article/details/9288353">Linux Shell 1&gt;/dev/null 2&gt;&amp;1 含义</a></p>
+<h2 id="nodejs-forever">nodejs forever</h2>
+<p>安装</p>
+<div class="hlcode"><pre><span class="err">$</span> <span class="n">sudo</span> <span class="n">npm</span> <span class="n">install</span> <span class="n">forever</span> <span class="o">-</span><span class="n">g</span>
+</pre></div>
+
+
+<p>使用</p>
+<div class="hlcode"><pre><span class="nv">$ </span>forever start app.js          <span class="c">#启动</span>
+<span class="nv">$ </span>forever stop app.js           <span class="c">#关闭</span>
+<span class="nv">$ </span>forever start -l forever.log -o out.log -e err.log app.js   <span class="c">#输出日志和错误</span>
+</pre></div>
+
+
+<p>参考：</p>
+<p><a href="https://github.com/foreverjs/forever">forever-github</a></p>
+    </div>
+
+        </div>
+        <div id="footer">
+            <span>
+                Copyright © 2017 <a href="http://honglu.me" target="_blank">独奏</a>.
+                Powered by <a href="http://simiki.org/" target="_blank">Simiki</a>.
+            </span>
+        </div>
+        
+    </body>
+</html>
