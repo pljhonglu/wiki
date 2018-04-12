@@ -1,0 +1,126 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel="Stylesheet" type="text/css" href="/static/css/style.css">
+        <link rel="Stylesheet" type="text/css" href="/static/css/tango.css">
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+        <link rel="icon" href="/favicon.ico" type="image/x-icon">
+        <title>Cycript - 独奏's Wiki</title>
+        <meta name="keywords" content="Wiki, 独奏, 鸿禄"/>
+        <meta name="description" content="独奏的个人 Wiki，独奏的 Blog 地址：http://homglu.me。"/>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body>
+        <div id="container">
+            
+    <div id="header">
+        <div id="post-nav">
+            
+            <a href="/">Home</a> » <a href="/#逆向">逆向</a> » Cycript
+            
+        </div>
+    </div>
+    <div class="clearfix"></div>
+    <div id="title">Cycript</div>
+    <div id="content">
+        <div class="toc"><span class="toctitle">Table of Contents</span><ul>
+<li><a href="#cycript">cycript</a><ul>
+<li><a href="#ui">打印 UI 层级</a></li>
+<li><a href="#viewcontroller">打印所有 ViewController</a></li>
+<li><a href="#framworks">加载 Framworks</a></li>
+<li><a href="#_1">输出对象的属性</a></li>
+<li><a href="#_2">获取所有方法：</a></li>
+<li><a href="#_3">获取当前控制器</a></li>
+<li><a href="#_4">获取沙盒路径</a></li>
+<li><a href="#_5">其它</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<h1 id="cycript">cycript</h1>
+<p>动态调试工具，在越狱设备上通过 MobileSubstrate 加载。通过 <code>cycript -p pid</code> 命令 hook 指定进程。</p>
+<p>另外可以在自己的应用中继承 Cycript。详见<a href="http://www.cycript.org/manual/">官方文档</a></p>
+<h2 id="ui">打印 UI 层级</h2>
+<div class="hlcode"><pre><span class="n">UIApp</span><span class="p">.</span><span class="n">keyWindow</span><span class="p">.</span><span class="n">recursiveDescription</span><span class="p">().</span><span class="n">toString</span><span class="p">();</span>
+</pre></div>
+
+
+<h2 id="viewcontroller">打印所有 ViewController</h2>
+<div class="hlcode"><pre><span class="p">[[[</span><span class="n">UIWindow</span> <span class="n">keyWindow</span><span class="p">]</span> <span class="n">rootViewController</span><span class="p">]</span> <span class="n">_printHierarchy</span><span class="p">].</span><span class="n">toString</span><span class="p">()</span>
+</pre></div>
+
+
+<h2 id="framworks">加载 Framworks</h2>
+<div class="hlcode"><pre><span class="n">function</span> <span class="nf">loadFramework</span><span class="p">(</span><span class="n">fw</span><span class="p">)</span> <span class="p">{</span> 
+   <span class="n">var</span> <span class="n">h</span><span class="o">=</span><span class="s">&quot;/System/Library/&quot;</span><span class="p">,</span><span class="n">t</span><span class="o">=</span><span class="s">&quot;Frameworks/&quot;</span><span class="o">+</span><span class="n">fw</span><span class="o">+</span><span class="s">&quot;.framework&quot;</span><span class="p">;</span>
+   <span class="p">[[</span><span class="n">NSBundle</span> <span class="n">bundleWithPath</span><span class="o">:</span><span class="n">h</span><span class="o">+</span><span class="n">t</span><span class="p">]</span> <span class="o">||</span> <span class="p">[</span><span class="n">NSBundle</span> <span class="n">bundleWithPath</span><span class="o">:</span><span class="n">h</span><span class="o">+</span><span class="s">&quot;Private&quot;</span><span class="o">+</span><span class="n">t</span><span class="p">]</span> <span class="n">load</span><span class="p">];</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h2 id="_1">输出对象的属性</h2>
+<div class="hlcode"><pre><span class="c1">// 方法1： 简单基本获取方法。</span>
+<span class="o">*</span><span class="n">controller</span><span class="err">（直接在对象前面加个</span><span class="o">*</span><span class="err">）</span>
+
+<span class="c1">// 方法2：方法一无法获取，就使用方法2</span>
+<span class="p">[</span><span class="n">i</span> <span class="k">for</span> <span class="p">(</span><span class="n">i</span> <span class="n">in</span> <span class="o">*</span><span class="n">UIApp</span><span class="p">)]</span>
+
+<span class="c1">// 方法3：建议方法三，方法三能获取到更多</span>
+<span class="k">function</span> <span class="n">tryPrintIvars</span><span class="p">(</span><span class="n">a</span><span class="p">){</span> <span class="k">var</span> <span class="n">x</span><span class="o">=</span><span class="p">{};</span> <span class="k">for</span><span class="p">(</span><span class="n">i</span> <span class="n">in</span> <span class="o">*</span><span class="n">a</span><span class="p">){</span> <span class="n">try</span><span class="p">{</span> <span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="o">*</span><span class="n">a</span><span class="p">)[</span><span class="n">i</span><span class="p">];</span> <span class="p">}</span> <span class="n">catch</span><span class="p">(</span><span class="n">e</span><span class="p">){}</span> <span class="p">}</span> <span class="k">return</span> <span class="n">x</span><span class="p">;</span> <span class="p">}</span>
+</pre></div>
+
+
+<h2 id="_2">获取所有方法：</h2>
+<div class="hlcode"><pre><span class="kd">function</span> <span class="nx">printMethods</span><span class="p">(</span><span class="nx">className</span><span class="p">,</span> <span class="nx">isa</span><span class="p">)</span> <span class="p">{</span> 
+    <span class="kd">var</span> <span class="nx">count</span> <span class="o">=</span> <span class="k">new</span> <span class="k">new</span> <span class="nx">Type</span><span class="p">(</span><span class="s2">&quot;I&quot;</span><span class="p">);</span>
+    <span class="kd">var</span> <span class="nx">classObj</span> <span class="o">=</span> <span class="p">(</span><span class="nx">isa</span> <span class="o">!=</span> <span class="kc">undefined</span><span class="p">)</span> <span class="o">?</span> <span class="nx">objc_getClass</span><span class="p">(</span><span class="nx">className</span><span class="p">)</span><span class="o">-&gt;</span><span class="nx">isa</span> <span class="o">:</span>     
+    <span class="nx">objc_getClass</span><span class="p">(</span><span class="nx">className</span><span class="p">);</span> 
+    <span class="kd">var</span> <span class="nx">methods</span> <span class="o">=</span> <span class="nx">class_copyMethodList</span><span class="p">(</span><span class="nx">classObj</span><span class="p">,</span> <span class="nx">count</span><span class="p">);</span> 
+    <span class="kd">var</span> <span class="nx">methodsArray</span> <span class="o">=</span> <span class="cp">[]</span><span class="p">;</span>
+    <span class="k">for</span><span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="o">*</span><span class="nx">count</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span> 
+        <span class="kd">var</span> <span class="nx">method</span> <span class="o">=</span> <span class="nx">methods</span><span class="cp">[</span><span class="nx">i</span><span class="cp">]</span><span class="p">;</span> 
+        <span class="nx">methodsArray</span><span class="p">.</span><span class="nx">push</span><span class="p">({</span><span class="nx">selector</span><span class="o">:</span><span class="nx">method_getName</span><span class="p">(</span><span class="nx">method</span><span class="p">),</span>     
+        <span class="nx">implementation</span><span class="o">:</span><span class="nx">method_getImplementation</span><span class="p">(</span><span class="nx">method</span><span class="p">)});</span>
+    <span class="p">}</span>
+    <span class="nx">free</span><span class="p">(</span><span class="nx">methods</span><span class="p">);</span> 
+    <span class="k">return</span> <span class="nx">methodsArray</span><span class="p">;</span>
+<span class="p">}</span>
+</pre></div>
+
+
+<h2 id="_3">获取当前控制器</h2>
+<div class="hlcode"><pre><span class="n">function</span> <span class="nf">currentVC</span><span class="p">()</span> <span class="p">{</span>
+    <span class="n">var</span> <span class="n">app</span> <span class="o">=</span> <span class="p">[</span><span class="n">UIApplication</span> <span class="n">sharedApplication</span><span class="p">]</span>  
+    <span class="n">var</span> <span class="n">keyWindow</span> <span class="o">=</span> <span class="n">app</span><span class="p">.</span><span class="n">keyWindow</span>  
+    <span class="n">var</span> <span class="n">rootController</span> <span class="o">=</span> <span class="n">keyWindow</span><span class="p">.</span><span class="n">rootViewController</span>  
+    <span class="n">var</span> <span class="n">visibleController</span> <span class="o">=</span> <span class="n">rootController</span><span class="p">.</span><span class="n">visibleViewController</span>  
+    <span class="k">if</span> <span class="p">(</span><span class="o">!</span><span class="n">visibleController</span><span class="p">){</span>
+       <span class="k">return</span> <span class="n">rootController</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="n">visibleController</span><span class="p">.</span><span class="n">childViewControllers</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="p">}</span>
+<span class="n">var</span> <span class="n">vc</span> <span class="o">=</span> <span class="n">currentVC</span><span class="p">()</span>
+</pre></div>
+
+
+<h2 id="_4">获取沙盒路径</h2>
+<div class="hlcode"><pre><span class="p">[[</span><span class="n">NSFileManager</span> <span class="n">defaultManager</span><span class="p">]</span> <span class="n">URLsForDirectory</span><span class="o">:</span><span class="n">NSDocumentDirectory</span> <span class="n">inDomains</span><span class="o">:</span><span class="n">NSUserDomainMask</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+</pre></div>
+
+
+<h2 id="_5">其它</h2>
+<p><a href="http://www.cycript.org/manual/">官方文档</a><br />
+<a href="http://ju.outofmemory.cn/entry/130315">利用 Cycript 调试 iOS 应用（无需越狱）</a></p>
+    </div>
+
+        </div>
+        <div id="footer">
+            <span>
+                Copyright © 2018 <a href="http://honglu.me" target="_blank">独奏</a>.
+                Powered by <a href="http://simiki.org/" target="_blank">Simiki</a>.
+            </span>
+        </div>
+        
+    </body>
+</html>

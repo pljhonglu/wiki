@@ -1,0 +1,136 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel="Stylesheet" type="text/css" href="/static/css/style.css">
+        <link rel="Stylesheet" type="text/css" href="/static/css/tango.css">
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+        <link rel="icon" href="/favicon.ico" type="image/x-icon">
+        <title>LLDB & DebugServer - 独奏's Wiki</title>
+        <meta name="keywords" content="Wiki, 独奏, 鸿禄"/>
+        <meta name="description" content="独奏的个人 Wiki，独奏的 Blog 地址：http://homglu.me。"/>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body>
+        <div id="container">
+            
+    <div id="header">
+        <div id="post-nav">
+            
+            <a href="/">Home</a> » <a href="/#逆向">逆向</a> » LLDB & DebugServer
+            
+        </div>
+    </div>
+    <div class="clearfix"></div>
+    <div id="title">LLDB & DebugServer</div>
+    <div id="content">
+        <div class="toc"><span class="toctitle">Table of Contents</span><ul>
+<li><a href="#_1">环境配置</a></li>
+<li><a href="#_2">指令</a><ul>
+<li><a href="#image">查看 image 内存偏移</a></li>
+<li><a href="#_3">断点调试</a></li>
+</ul>
+</li>
+<li><a href="#_4">参考</a></li>
+</ul>
+</div>
+<h2 id="_1">环境配置</h2>
+<p>在做iOS开发时，在Mac上输入LLDB的命令就可以控制iOS端的App，是因为在我们iOS客户端中有一个debugserver服务器。</p>
+<p>debugserver专门用来连接Mac端的LLDB客户端，接收LLDB所提供的命令，并且进行相应的执行。如果你的iOS设备进行过真机调试的话，设备中就会被安装上debugserver, 不过该debugserver只能用来调试你自己的相关应用。如果想要调试从AppStore中获取的App的话，那么我们需要对iOS设备上的debugserver进行处理。</p>
+<p>手机</p>
+<div class="hlcode"><pre><span class="n">debugserver</span> <span class="o">*:</span><span class="mi">19999</span> <span class="o">-</span><span class="n">a</span> <span class="n">Aweme</span>
+</pre></div>
+
+
+<p>电脑</p>
+<div class="hlcode"><pre><span class="o">&gt;</span> <span class="n">lldb</span>
+<span class="p">(</span><span class="n">lldb</span><span class="p">)</span> <span class="n">process</span> <span class="n">connect</span> <span class="n">connect</span><span class="o">:</span><span class="c1">//127.0.0.1:19999</span>
+</pre></div>
+
+
+<p>参考：<a href="http://www.cnblogs.com/ludashi/p/5730338.html">iOS逆向工程之Hopper+LLDB调试第三方App</a></p>
+<h2 id="_2">指令</h2>
+<h3 id="image">查看 image 内存偏移</h3>
+<div class="hlcode"><pre><span class="n">image</span> <span class="n">list</span> <span class="o">-</span><span class="n">o</span> <span class="o">-</span><span class="n">f</span> 
+</pre></div>
+
+
+<p>输出</p>
+<div class="hlcode"><pre><span class="p">[</span>  <span class="mi">0</span><span class="p">]</span> <span class="mh">0x000000010005b000</span> <span class="o">/</span><span class="n">var</span><span class="o">/</span><span class="n">mobile</span><span class="o">/</span><span class="n">Applications</span><span class="o">/</span><span class="mi">49268249</span><span class="o">-</span><span class="n">F1CD</span><span class="o">-</span><span class="mf">35F</span><span class="n">C</span><span class="o">-</span><span class="n">BFFD</span><span class="o">-</span><span class="n">B4B8F3751B0D</span><span class="o">/</span><span class="n">WeChat</span><span class="p">.</span><span class="n">app</span><span class="o">/</span><span class="n">wechat</span><span class="p">(</span><span class="mh">0x000000010005f000</span><span class="p">)</span>
+<span class="p">...</span>
+</pre></div>
+
+
+<p>左边地址为 ASLR 偏移量（随机偏移量），就是虚拟内存的地址相对于模块基地址的偏移量。右侧地址是偏移后的地址。</p>
+<p>模块在内存中的起始地址----模块基地址</p>
+<p>ASLR偏移 ---- 虚拟内存起始地址与模块基地址的偏移量</p>
+<blockquote>
+<p>模块偏移后的基地址（0x10005f000）= ASLR偏移量（0x10005b000）+ 模块偏移前基地址（0x4000）</p>
+</blockquote>
+<h3 id="_3">断点调试</h3>
+<p>加断点</p>
+<div class="hlcode"><pre><span class="c"># 加断点</span>
+br s -a 0x100331924
+
+<span class="c"># 打印寄存器</span>
+po <span class="nv">$x0</span>
+
+<span class="c">#下一步</span>
+ni
+
+<span class="c"># 放开断点</span>
+c
+
+<span class="c"># 禁用（disable）编号为1的断点</span>
+br dis 1
+
+<span class="c"># 启用（enable）编号为1的断点</span>
+br en 1
+
+<span class="c"># 禁用所有断点</span>
+br dis
+
+<span class="c"># 启用所有断点</span>
+br en
+
+<span class="c"># 删除（delete）编号为1的断点</span>
+br del 1
+
+<span class="c"># 删除所有断点</span>
+br del
+
+<span class="c"># 打印堆栈</span>
+p/x <span class="nv">$sp</span>
+
+<span class="c"># 读所有寄存器的值</span>
+reg <span class="nb">read</span> 
+
+<span class="c"># 读内存的值</span>
+memory <span class="nb">read</span>/10xh 0x000000016fdac630
+</pre></div>
+
+
+<p>可以通过 nexti (简写：ni)和 stepi (简写：si)来进行单步的调试。</p>
+<p>ni遇到跳转不会进入到跳转中去，si会跳转到相应的分支中去。</p>
+<h2 id="_4">参考</h2>
+<p><a href="http://www.cnblogs.com/ludashi/p/5730338.html">iOS逆向工程之Hopper+LLDB调试第三方App</a><br />
+<a href="http://southpeak.github.io/2015/01/25/tool-lldb/">LLDB调试器使用简介</a><br />
+<a href="http://blog.imjun.net/posts/restore-symbol-of-iOS-app/">iOS符号表恢复&amp;逆向支付宝 - Jun's Blog</a><br />
+<a href="http://cocoahuke.com/2015/08/30/ARMarch64%E6%B1%87%E7%BC%96%E5%AD%A6%E4%B9%A0%E7%AC%94%E8%AE%B0/">ARMarch64汇编学习笔记 · Cocoa</a><br />
+<a href="https://blog.cnbluebox.com/blog/2017/07/24/arm64-start/">iOS开发同学的arm64汇编入门 - 刘坤的技术博客</a><br />
+<a href="http://blog.imjun.net/posts/convert-iOS-app-to-dynamic-library/">黑科技：把第三方 iOS 应用转成动态库 - Jun's Blog</a><br />
+<a href="https://github.com/tobefuturer/app2dylib">github: app2dylib</a><br />
+<a href="http://www.cnblogs.com/ludashi/p/5740696.html">iOS逆向工程之Hopper中的ARM指令</a><br />
+<a href="http://www.cnblogs.com/ludashi/p/5725743.html">iOS逆向工程之App脱壳</a></p>
+    </div>
+
+        </div>
+        <div id="footer">
+            <span>
+                Copyright © 2018 <a href="http://honglu.me" target="_blank">独奏</a>.
+                Powered by <a href="http://simiki.org/" target="_blank">Simiki</a>.
+            </span>
+        </div>
+        
+    </body>
+</html>

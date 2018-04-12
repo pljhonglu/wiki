@@ -1,0 +1,75 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel="Stylesheet" type="text/css" href="/static/css/style.css">
+        <link rel="Stylesheet" type="text/css" href="/static/css/tango.css">
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+        <link rel="icon" href="/favicon.ico" type="image/x-icon">
+        <title>定时任务 - 独奏's Wiki</title>
+        <meta name="keywords" content="Wiki, 独奏, 鸿禄"/>
+        <meta name="description" content="独奏的个人 Wiki，独奏的 Blog 地址：http://homglu.me。"/>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body>
+        <div id="container">
+            
+    <div id="header">
+        <div id="post-nav">
+            
+            <a href="/">Home</a> » <a href="/#Linux">Linux</a> » 定时任务
+            
+        </div>
+    </div>
+    <div class="clearfix"></div>
+    <div id="title">定时任务</div>
+    <div id="content">
+        <div class="toc"><span class="toctitle">Table of Contents</span><ul>
+<li><a href="#crontab">crontab</a></li>
+</ul>
+</div>
+<h1 id="crontab">crontab</h1>
+<ul>
+<li>crontab -u //设定某个用户的cron服务，一般root用户在执行这个命令的时候需要此参数  </li>
+<li>crontab -l //列出某个用户cron服务的详细内容</li>
+<li>crontab -r //删除没个用户的cron服务</li>
+<li>crontab -e //编辑某个用户的cron服务</li>
+</ul>
+<div class="hlcode"><pre><span class="err">分</span>     <span class="err">小时</span>    <span class="err">日</span>       <span class="err">月</span>      <span class="err">星期</span>     <span class="err">命令</span>
+<span class="mi">0</span><span class="o">-</span><span class="mi">59</span>   <span class="mi">0</span><span class="o">-</span><span class="mi">23</span>   <span class="mi">1</span><span class="o">-</span><span class="mi">31</span>   <span class="mi">1</span><span class="o">-</span><span class="mi">12</span>     <span class="mi">0</span><span class="o">-</span><span class="mi">6</span>     <span class="n">command</span>     <span class="p">(</span><span class="err">取值范围</span><span class="p">,</span><span class="mi">0</span><span class="err">表示周日一般一行对应一个任务</span><span class="p">)</span>
+
+
+<span class="err">“</span><span class="o">*</span><span class="err">”代表取值范围内的数字</span><span class="p">,</span>
+<span class="err">“</span><span class="o">/</span><span class="err">”代表”每”</span><span class="p">,</span>
+<span class="err">“</span><span class="o">-</span><span class="err">”代表从某个数字到某个数字</span><span class="p">,</span>
+<span class="err">“</span><span class="p">,</span><span class="err">”分开几个离散的数字</span>
+</pre></div>
+
+
+<p><img alt="crontab" src="../media/crontab.png" /></p>
+<p>/sbin/service crond start //启动服务
+/sbin/service crond stop //关闭服务
+/sbin/service crond restart //重启服务
+/sbin/service crond reload //重新载入配置</p>
+<p>查看crontab服务状态：
+service crond status</p>
+<p>手动启动crontab服务：
+service crond start</p>
+<p>查看crontab服务是否已设置为开机启动，执行命令：
+ntsysv</p>
+<p>加入开机自动启动：
+chkconfig –level 35 crond on</p>
+<p>参考：</p>
+<p><a href="http://linuxtools-rst.readthedocs.io/zh_CN/latest/tool/crontab.html">crontab 定时任务</a></p>
+    </div>
+
+        </div>
+        <div id="footer">
+            <span>
+                Copyright © 2018 <a href="http://honglu.me" target="_blank">独奏</a>.
+                Powered by <a href="http://simiki.org/" target="_blank">Simiki</a>.
+            </span>
+        </div>
+        
+    </body>
+</html>

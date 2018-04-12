@@ -1,0 +1,197 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <link rel="Stylesheet" type="text/css" href="/static/css/style.css">
+        <link rel="Stylesheet" type="text/css" href="/static/css/tango.css">
+        <link rel="shortcut icon" href="/favicon.ico" type="image/x-icon">
+        <link rel="icon" href="/favicon.ico" type="image/x-icon">
+        <title>iOS 逆向工具 - 独奏's Wiki</title>
+        <meta name="keywords" content="Wiki, 独奏, 鸿禄"/>
+        <meta name="description" content="独奏的个人 Wiki，独奏的 Blog 地址：http://homglu.me。"/>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+    </head>
+
+    <body>
+        <div id="container">
+            
+    <div id="header">
+        <div id="post-nav">
+            
+            <a href="/">Home</a> » <a href="/#逆向">逆向</a> » iOS 逆向工具
+            
+        </div>
+    </div>
+    <div class="clearfix"></div>
+    <div id="title">iOS 逆向工具</div>
+    <div id="content">
+        <div class="toc"><span class="toctitle">Table of Contents</span><ul>
+<li><a href="#_1">工具汇总</a></li>
+<li><a href="#_2">常用命令</a></li>
+</ul>
+</div>
+<h2 id="_1">工具汇总</h2>
+<table>
+<thead>
+<tr>
+<th>名称</th>
+<th>用途</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://github.com/stefanesser/dumpdecrypted">dumpdecrypted</a></td>
+<td>砸壳工具</td>
+</tr>
+<tr>
+<td><a href="https://github.com/KJCracks/Clutch">Clutch</a></td>
+<td>砸壳工具</td>
+</tr>
+<tr>
+<td><a href="http://www.cycript.org/">cycript</a></td>
+<td>APP 运行时分析</td>
+</tr>
+<tr>
+<td><a href="http://stevenygard.com/projects/class-dump/">Class-dump</a></td>
+<td>导出头文件</td>
+</tr>
+<tr>
+<td><a href="https://www.hopperapp.com/">hopper</a></td>
+<td>反汇编工具</td>
+</tr>
+<tr>
+<td><a href="https://github.com/theos/theos">theos</a></td>
+<td>越狱开发框架</td>
+</tr>
+<tr>
+<td><a href="https://github.com/AloneMonkey/MonkeyDev">MonkeyDev</a></td>
+<td>Xcode 越狱插件集成</td>
+</tr>
+<tr>
+<td><a href="https://github.com/NitinJami/keychaineditor">keychaineditor</a></td>
+<td>keychain 修改工具</td>
+</tr>
+<tr>
+<td><a href="https://github.com/ptoomey3/Keychain-Dumper">Keychain-Dumper</a></td>
+<td>打印 keychain</td>
+</tr>
+<tr>
+<td><a href="http://iphonedevwiki.net/index.php/Main_Page">iphonedevwiki</a></td>
+<td>越狱开发 wiki</td>
+</tr>
+<tr>
+<td><a href="https://github.com/iolate/SimulateTouch">SimulateTouch</a></td>
+<td>模拟点击</td>
+</tr>
+<tr>
+<td><a href="https://github.com/iolate/SimulateKeyboard">SimulateKeyboard</a></td>
+<td>模拟按键</td>
+</tr>
+<tr>
+<td><a href="http://iphonedevwiki.net/index.php/Ldid">ldid</a></td>
+<td>签名工具</td>
+</tr>
+<tr>
+<td><a href="https://zh.wikipedia.org/zh-hans/Dpkg">dpkg</a></td>
+<td>包管理工具</td>
+</tr>
+<tr>
+<td><a href="https://www.cydiaios7.com/">cydia</a></td>
+<td>越狱后安装第三方包</td>
+</tr>
+<tr>
+<td><a href="https://github.com/gdbinit/MachOView">MachOView</a></td>
+<td>查看 mach-o 结构</td>
+</tr>
+<tr>
+<td><a href="https://revealapp.com/">reveal</a></td>
+<td>查看 UI 结构</td>
+</tr>
+<tr>
+<td><a href="https://github.com/maciekish/iReSign">iReSign</a></td>
+<td>重签名工具</td>
+</tr>
+<tr>
+<td><a href="https://github.com/DanTheMan827/ios-app-signer">ios-app-signer</a></td>
+<td>签名工具</td>
+</tr>
+</tbody>
+</table>
+<h2 id="_2">常用命令</h2>
+<table>
+<thead>
+<tr>
+<th>命令</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>ps</td>
+<td>显示进程状态，CPU 使用率，内存使用情况等</td>
+</tr>
+<tr>
+<td>sysctl</td>
+<td>检查设定 Kernel 配置</td>
+</tr>
+<tr>
+<td>netstat</td>
+<td>显示网络连接，路由表，接口状态等</td>
+</tr>
+<tr>
+<td>route</td>
+<td>路由修改</td>
+</tr>
+<tr>
+<td>renice</td>
+<td>调整程序运行的优先级</td>
+</tr>
+<tr>
+<td>ifconfig</td>
+<td>查看网络配置</td>
+</tr>
+<tr>
+<td>tcpdump</td>
+<td>截获分析网络数据包</td>
+</tr>
+<tr>
+<td>lsof</td>
+<td>列出当前系统打开的文件列表，别忘记一切皆文件，包括网络连接、硬件等</td>
+</tr>
+<tr>
+<td>otool</td>
+<td>查看程序依赖哪些动态库信息，反编代码段……等等等等</td>
+</tr>
+<tr>
+<td>nm</td>
+<td>显示符号表</td>
+</tr>
+<tr>
+<td>ldid</td>
+<td>签名工具</td>
+</tr>
+<tr>
+<td>gdb</td>
+<td>调试工具 patch ——补丁工具</td>
+</tr>
+<tr>
+<td>SSH</td>
+<td>远程控制</td>
+</tr>
+<tr>
+<td>lldb</td>
+<td>调试工具</td>
+</tr>
+</tbody>
+</table>
+    </div>
+
+        </div>
+        <div id="footer">
+            <span>
+                Copyright © 2018 <a href="http://honglu.me" target="_blank">独奏</a>.
+                Powered by <a href="http://simiki.org/" target="_blank">Simiki</a>.
+            </span>
+        </div>
+        
+    </body>
+</html>
